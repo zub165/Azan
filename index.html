@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azan Times & Islamic Calendar</title>
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .prayer-times {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .prayer-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .prayer-card.optional {
+            background: #f8f9fa;
+            border: 2px dashed #e9ecef;
+        }
+
+        .prayer-card.optional h3 {
+            color: #6c757d;
+        }
+
+        .prayer-card.active {
+            background: #e3f2fd;
+        }
+
+        .prayer-card h3 {
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+
+        .prayer-card .countdown {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .location-info {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .moon-phase {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .moon-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .moon-day {
+            position: relative;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .moon-day.current {
+            background: #e3f2fd;
+            box-shadow: 0 0 0 2px #2196F3;
+        }
+
+        .moon-day .date {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 2px;
+        }
+
+        .moon-day .moon-icon {
+            width: 24px;
+            height: 24px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .moon-phase-current {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .moon-phase-current .moon-icon-large {
+            width: 100px;
+            height: 100px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .moon-phase-info {
+            text-align: left;
+        }
+
+        .moon-phase-info h3 {
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+
+        .moon-phase-info p {
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .islamic-date {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .material-icons {
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
+        #moonPhaseImg {
+            width: 100px;
+            height: 100px;
+            margin: 20px auto;
+        }
+
+        .notification-banner {
+            background: #2196F3;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            display: none;
+        }
+
+        .notification-banner.show {
+            display: block;
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: #2196F3;
+            transition: width 1s linear;
+        }
+
+        .qari-selector {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .qari-selector select {
+            padding: 8px 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1em;
+            margin-top: 10px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .qari-selector select:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        .test-azan-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .test-azan-btn:hover {
+            background: #1976D2;
+        }
+
+        .calculation-method {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .calculation-method select {
+            padding: 8px 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1em;
+            margin-top: 10px;
+            background: #fff;
+            cursor: pointer;
+            width: 200px;
+        }
+
+        .calculation-method select:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        .method-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .method-info.show {
+            display: block;
+        }
+
+        .madhab-selector {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .madhab-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .madhab-option input[type="radio"] {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="notification-banner" id="notificationBanner">
+        Click here to enable Azan notifications
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Azan Times & Islamic Calendar</h1>
+            <p id="currentTime"></p>
+        </div>
+
+        <div class="calculation-method">
+            <h2><span class="material-icons">calculate</span> Prayer Time Calculation Method</h2>
+            <div style="margin-top: 15px;">
+                <select id="calculationMethodSelect">
+                    <option value="MuslimWorldLeague">Muslim World League</option>
+                    <option value="Egyptian">Egyptian General Authority</option>
+                    <option value="Karachi">University of Islamic Sciences, Karachi</option>
+                    <option value="UmmAlQura">Umm Al-Qura University, Makkah</option>
+                    <option value="Dubai">Dubai (UAE)</option>
+                    <option value="MoonsightingCommittee">Moonsighting Committee</option>
+                    <option value="NorthAmerica">Islamic Society of North America</option>
+                    <option value="Kuwait">Kuwait</option>
+                    <option value="Qatar">Qatar</option>
+                    <option value="Singapore">Singapore</option>
+                </select>
+                <div id="methodInfo" class="method-info"></div>
+                <div class="madhab-selector">
+                    <label class="madhab-option">
+                        <input type="radio" name="madhab" value="Shafi" checked> Shafi'i
+                    </label>
+                    <label class="madhab-option">
+                        <input type="radio" name="madhab" value="Hanafi"> Hanafi
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="qari-selector">
+            <h2><span class="material-icons">record_voice_over</span> Muazzin Selection</h2>
+            <div style="margin-top: 15px;">
+                <select id="qariSelect"></select>
+                <button class="test-azan-btn" onclick="testAzan()">Test Azan</button>
+            </div>
+        </div>
+
+        <div class="location-info">
+            <h2><span class="material-icons">location_on</span> Location Information</h2>
+            <p id="locationDetails">Detecting location...</p>
+        </div>
+
+        <div class="prayer-times">
+            <div class="prayer-card optional" id="tahajjudCard">
+                <h3>Tahajjud</h3>
+                <p id="tahajjudTime">--:--</p>
+                <p class="countdown" id="tahajjudCountdown"></p>
+                <div class="progress-bar" id="tahajjudProgress"></div>
+            </div>
+            <div class="prayer-card optional" id="suhoorCard">
+                <h3>Suhoor Ends</h3>
+                <p id="suhoorTime">--:--</p>
+                <p class="countdown" id="suhoorCountdown"></p>
+                <div class="progress-bar" id="suhoorProgress"></div>
+            </div>
+            <div class="prayer-card" id="fajrCard">
+                <h3>Fajr</h3>
+                <p id="fajrTime">--:--</p>
+                <p class="countdown" id="fajrCountdown"></p>
+                <div class="progress-bar" id="fajrProgress"></div>
+            </div>
+            <div class="prayer-card optional" id="ishraqCard">
+                <h3>Ishraq</h3>
+                <p id="ishraqTime">--:--</p>
+                <p class="countdown" id="ishraqCountdown"></p>
+                <div class="progress-bar" id="ishraqProgress"></div>
+            </div>
+            <div class="prayer-card" id="dhuhrCard">
+                <h3>Dhuhr</h3>
+                <p id="dhuhrTime">--:--</p>
+                <p class="countdown" id="dhuhrCountdown"></p>
+                <div class="progress-bar" id="dhuhrProgress"></div>
+            </div>
+            <div class="prayer-card" id="asrCard">
+                <h3>Asr</h3>
+                <p id="asrTime">--:--</p>
+                <p class="countdown" id="asrCountdown"></p>
+                <div class="progress-bar" id="asrProgress"></div>
+            </div>
+            <div class="prayer-card" id="maghribCard">
+                <h3>Maghrib</h3>
+                <p id="maghribTime">--:--</p>
+                <p class="countdown" id="maghribCountdown"></p>
+                <div class="progress-bar" id="maghribProgress"></div>
+            </div>
+            <div class="prayer-card" id="ishaCard">
+                <h3>Isha</h3>
+                <p id="ishaTime">--:--</p>
+                <p class="countdown" id="ishaCountdown"></p>
+                <div class="progress-bar" id="ishaProgress"></div>
+            </div>
+        </div>
+
+        <div class="moon-phase">
+            <h2><span class="material-icons">brightness_2</span> Moon Phase</h2>
+            
+            <div class="moon-phase-current">
+                <div class="moon-icon-large" id="currentMoonIcon"></div>
+                <div class="moon-phase-info">
+                    <h3 id="moonPhaseText">Loading moon phase...</h3>
+                    <p id="moonPhaseDate"></p>
+                    <p id="moonPhaseDetails"></p>
+                </div>
+            </div>
+
+            <div class="moon-calendar" id="moonCalendar">
+                <!-- Moon calendar will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="islamic-date">
+            <h2><span class="material-icons">calendar_today</span> Islamic Date</h2>
+            <p id="islamicDate">Loading Islamic date...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.3/dist/adhan.min.js"></script>
+    <script src="azan.js"></script>
+    <script>
+        let latitude, longitude;
+        let currentPrayerTimes;
+        let currentCalculationMethod = localStorage.getItem('calculationMethod') || 'MuslimWorldLeague';
+        let currentMadhab = localStorage.getItem('madhab') || 'Shafi';
+
+        const calculationMethodInfo = {
+            MuslimWorldLeague: "Standard method used by the Muslim World League. Fajr: 18°, Isha: 17°",
+            Egyptian: "Egyptian General Authority of Survey. Fajr: 19.5°, Isha: 17.5°",
+            Karachi: "University of Islamic Sciences, Karachi. Fajr: 18°, Isha: 18°",
+            UmmAlQura: "Umm Al-Qura University, Makkah. Fajr: 18.5°, Isha: 90min after Maghrib",
+            Dubai: "UAE Method. Fajr: 18.2°, Isha: 18.2°",
+            MoonsightingCommittee: "Moonsighting Committee. Fajr: 18°, Isha: 18°",
+            NorthAmerica: "Islamic Society of North America. Fajr: 15°, Isha: 15°",
+            Kuwait: "Kuwait Method. Fajr: 18°, Isha: 17.5°",
+            Qatar: "Qatar Method. Fajr: 18°, Isha: 90min after Maghrib",
+            Singapore: "Singapore Method. Fajr: 20°, Isha: 18°"
+        };
+
+        // Initialize calculation method selector
+        function initializeCalculationMethod() {
+            const select = document.getElementById('calculationMethodSelect');
+            const madhabInputs = document.querySelectorAll('input[name="madhab"]');
+            
+            // Initialize calculation method
+            select.value = currentCalculationMethod;
+            updateMethodInfo(currentCalculationMethod);
+
+            // Initialize madhab
+            madhabInputs.forEach(input => {
+                if (input.value === currentMadhab) {
+                    input.checked = true;
+                }
+                input.addEventListener('change', (e) => {
+                    currentMadhab = e.target.value;
+                    localStorage.setItem('madhab', currentMadhab);
+                    if (latitude && longitude) {
+                        calculatePrayerTimes();
+                    }
+                });
+            });
+
+            select.addEventListener('change', (e) => {
+                currentCalculationMethod = e.target.value;
+                localStorage.setItem('calculationMethod', currentCalculationMethod);
+                updateMethodInfo(currentCalculationMethod);
+                if (latitude && longitude) {
+                    calculatePrayerTimes();
+                }
+            });
+        }
+
+        function updateMethodInfo(method) {
+            const infoDiv = document.getElementById('methodInfo');
+            infoDiv.textContent = calculationMethodInfo[method];
+            infoDiv.classList.add('show');
+        }
+
+        // Get user's location
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition, showError);
+            } else {
+                document.getElementById('locationDetails').innerHTML = "Geolocation is not supported by this browser.";
+            }
+        }
+
+        function showPosition(position) {
+            console.log("Location received:", position);
+            latitude = position.coords.latitude;
+            longitude = position.coords.longitude;
+            
+            document.getElementById('locationDetails').innerHTML = `Latitude: ${latitude}, Longitude: ${longitude} (Getting location name...)`;
+            
+            // Reverse geocoding to get location name
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Location data:", data);
+                    document.getElementById('locationDetails').innerHTML = `${data.display_name}`;
+                    calculatePrayerTimes();
+                })
+                .catch(error => {
+                    console.error("Error getting location name:", error);
+                    document.getElementById('locationDetails').innerHTML = `Latitude: ${latitude}, Longitude: ${longitude}`;
+                    calculatePrayerTimes();
+                });
+        }
+
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    document.getElementById('locationDetails').innerHTML = "User denied the request for Geolocation."
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    document.getElementById('locationDetails').innerHTML = "Location information is unavailable."
+                    break;
+                case error.TIMEOUT:
+                    document.getElementById('locationDetails').innerHTML = "The request to get user location timed out."
+                    break;
+                case error.UNKNOWN_ERROR:
+                    document.getElementById('locationDetails').innerHTML = "An unknown error occurred."
+                    break;
+            }
+        }
+
+        function calculatePrayerTimes() {
+            console.log("Calculating prayer times...");
+            console.log("Using coordinates:", latitude, longitude);
+            console.log("Calculation method:", currentCalculationMethod);
+            console.log("Madhab:", currentMadhab);
+
+            const date = new Date();
+            const coordinates = new Adhan.Coordinates(latitude, longitude);
+            
+            // Get calculation parameters based on selected method
+            let params;
+            try {
+                switch(currentCalculationMethod) {
+                    case 'MuslimWorldLeague':
+                        params = Adhan.CalculationMethod.MuslimWorldLeague();
+                        break;
+                    case 'Egyptian':
+                        params = Adhan.CalculationMethod.Egyptian();
+                        break;
+                    case 'Karachi':
+                        params = Adhan.CalculationMethod.Karachi();
+                        break;
+                    case 'UmmAlQura':
+                        params = Adhan.CalculationMethod.UmmAlQura();
+                        break;
+                    case 'Dubai':
+                        params = Adhan.CalculationMethod.Dubai();
+                        break;
+                    case 'MoonsightingCommittee':
+                        params = Adhan.CalculationMethod.MoonsightingCommittee();
+                        break;
+                    case 'NorthAmerica':
+                        params = Adhan.CalculationMethod.NorthAmerica();
+                        break;
+                    case 'Kuwait':
+                        params = Adhan.CalculationMethod.Kuwait();
+                        break;
+                    case 'Qatar':
+                        params = Adhan.CalculationMethod.Qatar();
+                        break;
+                    case 'Singapore':
+                        params = Adhan.CalculationMethod.Singapore();
+                        break;
+                    default:
+                        params = Adhan.CalculationMethod.MuslimWorldLeague();
+                }
+
+                // Set madhab for Asr calculation
+                params.madhab = currentMadhab === 'Hanafi' ? Adhan.Madhab.Hanafi : Adhan.Madhab.Shafi;
+                
+                const prayerTimes = new Adhan.PrayerTimes(coordinates, date, params);
+                console.log("Prayer times calculated:", prayerTimes);
+                currentPrayerTimes = prayerTimes;
+
+                // Calculate additional times
+                const tomorrow = new Date(date);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const tomorrowPrayerTimes = new Adhan.PrayerTimes(coordinates, tomorrow, params);
+
+                // Calculate Suhoor time (10 minutes before Fajr)
+                const suhoorTime = new Date(prayerTimes.fajr);
+                suhoorTime.setMinutes(suhoorTime.getMinutes() - 10);
+
+                // Calculate Ishraq time (20 minutes after sunrise)
+                const ishraqTime = new Date(prayerTimes.sunrise);
+                ishraqTime.setMinutes(ishraqTime.getMinutes() + 20);
+
+                // Calculate Tahajjud time (last third of the night)
+                const maghribTime = new Date(prayerTimes.maghrib);
+                const nextFajrTime = new Date(tomorrowPrayerTimes.fajr);
+                const nightDuration = nextFajrTime - maghribTime;
+                const tahajjudTime = new Date(nextFajrTime - (nightDuration / 3));
+
+                // Update UI with calculated times
+                updatePrayerTimesUI(prayerTimes, suhoorTime, ishraqTime, tahajjudTime);
+
+            } catch (error) {
+                console.error("Error calculating prayer times:", error);
+                document.getElementById('locationDetails').innerHTML += "<br>Error calculating prayer times. Please try refreshing the page.";
+            }
+        }
+
+        function updatePrayerTimesUI(prayerTimes, suhoorTime, ishraqTime, tahajjudTime) {
+            try {
+                document.getElementById('tahajjudTime').innerHTML = moment(tahajjudTime).format('hh:mm A');
+                document.getElementById('suhoorTime').innerHTML = moment(suhoorTime).format('hh:mm A');
+                document.getElementById('fajrTime').innerHTML = moment(prayerTimes.fajr).format('hh:mm A');
+                document.getElementById('ishraqTime').innerHTML = moment(ishraqTime).format('hh:mm A');
+                document.getElementById('dhuhrTime').innerHTML = moment(prayerTimes.dhuhr).format('hh:mm A');
+                document.getElementById('asrTime').innerHTML = moment(prayerTimes.asr).format('hh:mm A');
+                document.getElementById('maghribTime').innerHTML = moment(prayerTimes.maghrib).format('hh:mm A');
+                document.getElementById('ishaTime').innerHTML = moment(prayerTimes.isha).format('hh:mm A');
+
+                console.log("Prayer times updated in UI");
+            } catch (error) {
+                console.error("Error updating prayer times in UI:", error);
+            }
+        }
+
+        function updateCountdowns() {
+            if (!currentPrayerTimes) return;
+
+            const now = moment();
+            const prayers = {
+                tahajjud: moment(currentPrayerTimes.tahajjud),
+                suhoor: moment(currentPrayerTimes.suhoor),
+                fajr: moment(currentPrayerTimes.fajr),
+                ishraq: moment(currentPrayerTimes.ishraq),
+                dhuhr: moment(currentPrayerTimes.dhuhr),
+                asr: moment(currentPrayerTimes.asr),
+                maghrib: moment(currentPrayerTimes.maghrib),
+                isha: moment(currentPrayerTimes.isha)
+            };
+
+            // Reset active states
+            document.querySelectorAll('.prayer-card').forEach(card => card.classList.remove('active'));
+
+            // Find next prayer
+            let nextPrayer = null;
+            let nextPrayerTime = null;
+
+            Object.entries(prayers).forEach(([prayer, time]) => {
+                if (time.isAfter(now) && (!nextPrayerTime || time.isBefore(nextPrayerTime))) {
+                    nextPrayer = prayer;
+                    nextPrayerTime = time;
+                }
+            });
+
+            // Update countdowns and progress bars
+            Object.entries(prayers).forEach(([prayer, time]) => {
+                const countdownElement = document.getElementById(`${prayer}Countdown`);
+                const progressElement = document.getElementById(`${prayer}Progress`);
+                const cardElement = document.getElementById(`${prayer}Card`);
+
+                if (prayer === nextPrayer) {
+                    cardElement.classList.add('active');
+                    const duration = moment.duration(time.diff(now));
+                    countdownElement.innerHTML = `Next in ${duration.hours()}h ${duration.minutes()}m`;
+                    
+                    // Calculate progress
+                    const prevPrayerTime = getPreviousPrayerTime(prayer, prayers);
+                    if (prevPrayerTime) {
+                        const totalDuration = time.diff(prevPrayerTime);
+                        const elapsed = now.diff(prevPrayerTime);
+                        const progress = (elapsed / totalDuration) * 100;
+                        progressElement.style.width = `${progress}%`;
+                    }
+                } else {
+                    countdownElement.innerHTML = '';
+                    progressElement.style.width = '0%';
+                }
+            });
+        }
+
+        function getPreviousPrayerTime(currentPrayer, prayers) {
+            const prayerOrder = ['tahajjud', 'suhoor', 'fajr', 'ishraq', 'dhuhr', 'asr', 'maghrib', 'isha'];
+            const currentIndex = prayerOrder.indexOf(currentPrayer);
+            if (currentIndex <= 0) return null;
+            return prayers[prayerOrder[currentIndex - 1]];
+        }
+
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('currentTime').innerHTML = moment(now).format('MMMM Do YYYY, h:mm:ss A');
+        }
+
+        function getMoonPhase() {
+            const date = new Date();
+            const age = moonAge(date);
+            const phase = getMoonPhaseFromAge(age);
+            const illumination = getMoonIllumination(age);
+            
+            // Update current moon phase display
+            document.getElementById('moonPhaseText').innerHTML = phase;
+            document.getElementById('moonPhaseDate').innerHTML = moment(date).format('MMMM Do YYYY');
+            document.getElementById('moonPhaseDetails').innerHTML = `Illumination: ${Math.round(illumination * 100)}%`;
+            document.getElementById('currentMoonIcon').style.backgroundImage = `url(${getMoonPhaseIcon(age)})`;
+            
+            // Update moon calendar
+            updateMoonCalendar(date);
+        }
+
+        function getMoonPhaseIcon(age) {
+            // Return appropriate moon phase icon URL based on age
+            const phase = Math.floor((age / 29.530588853) * 8) % 8;
+            return `https://www.timeanddate.com/scripts/moon.php?i=${phase}`;
+        }
+
+        function getMoonIllumination(age) {
+            // Calculate moon illumination (simplified)
+            const phase = (age / 29.530588853) * Math.PI * 2;
+            return (1 - Math.cos(phase)) / 2;
+        }
+
+        function updateMoonCalendar(currentDate) {
+            const calendar = document.getElementById('moonCalendar');
+            calendar.innerHTML = '';
+
+            // Get start of current month
+            const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+
+            // Create calendar days
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayDate = new Date(startDate.getFullYear(), startDate.getMonth(), i);
+                const age = moonAge(dayDate);
+                const dayElement = document.createElement('div');
+                dayElement.className = 'moon-day';
+                
+                if (i === currentDate.getDate()) {
+                    dayElement.classList.add('current');
+                }
+
+                dayElement.innerHTML = `
+                    <span class="date">${i}</span>
+                    <div class="moon-icon" style="background-image: url(${getMoonPhaseIcon(age)})"></div>
+                `;
+
+                calendar.appendChild(dayElement);
+            }
+        }
+
+        function moonAge(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            const lp = 2551443;
+            const now = new Date(year, month-1, day, 20, 35, 0);
+            const new_moon = new Date(1970, 0, 7, 20, 35, 0);
+            const phase = ((now.getTime() - new_moon.getTime())/1000) % lp;
+            return phase / (24*3600) * 29.530588853;
+        }
+
+        function getMoonPhaseFromAge(age) {
+            if (age < 1.84566) return "New Moon";
+            else if (age < 5.53699) return "Waxing Crescent";
+            else if (age < 9.22831) return "First Quarter";
+            else if (age < 12.91963) return "Waxing Gibbous";
+            else if (age < 16.61096) return "Full Moon";
+            else if (age < 20.30228) return "Waning Gibbous";
+            else if (age < 23.99361) return "Last Quarter";
+            else if (age < 27.68493) return "Waning Crescent";
+            return "New Moon";
+        }
+
+        function getIslamicDate() {
+            const date = new Date();
+            const options = { calendar: 'islamic', year: 'numeric', month: 'long', day: 'numeric' };
+            const islamicDate = date.toLocaleDateString('en-US-u-ca-islamic', options);
+            document.getElementById('islamicDate').innerHTML = islamicDate;
+        }
+
+        // Show notification banner if needed
+        if (Notification.permission !== "granted") {
+            document.getElementById('notificationBanner').classList.add('show');
+        }
+
+        // Handle notification permission request
+        document.getElementById('notificationBanner').addEventListener('click', () => {
+            window.AzanPlayer.requestNotificationPermission();
+            document.getElementById('notificationBanner').classList.remove('show');
+        });
+
+        // Initialize Qari selector
+        function initializeQariSelector() {
+            const select = document.getElementById('qariSelect');
+            const qaris = window.AzanPlayer.getAvailableQaris();
+            const currentQari = window.AzanPlayer.getCurrentQari();
+            
+            qaris.forEach(qari => {
+                const option = document.createElement('option');
+                option.value = qari;
+                option.textContent = qari;
+                if (qari === currentQari) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+
+            select.addEventListener('change', (e) => {
+                window.AzanPlayer.changeQari(e.target.value);
+            });
+        }
+
+        // Function to test Azan
+        function testAzan() {
+            console.log("Testing Azan...");
+            const audio = new Audio(window.AzanPlayer.getAzanUrl('fajr'));
+            
+            audio.addEventListener('canplaythrough', () => {
+                console.log("Audio loaded and can play");
+            });
+            
+            audio.addEventListener('error', (e) => {
+                console.error("Audio error:", e);
+                alert("Error loading Azan audio. Please check your internet connection.");
+            });
+            
+            audio.play().catch(error => {
+                console.error("Error playing Azan:", error);
+                if (error.name === 'NotAllowedError') {
+                    alert("Please interact with the page first before playing audio (browser security policy).");
+                } else {
+                    alert("Error playing Azan audio. Please try again.");
+                }
+            });
+        }
+
+        // Initialize
+        getLocation();
+        initializeCalculationMethod();
+        initializeQariSelector();
+        setInterval(updateCurrentTime, 1000);
+        setInterval(getMoonPhase, 60000);
+        setInterval(getIslamicDate, 60000);
+        setInterval(updateCountdowns, 1000);
+        updateCurrentTime();
+        getMoonPhase();
+        getIslamicDate();
+    </script>
+</body>
+</html> 
