@@ -2,237 +2,292 @@
 const qaris = {
     "Abdul Basit": {
         id: "abdul-basit",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Abdul-Basit-Abdus-Samad/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Abdul-Basit-Abdus-Samad/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/abdul-basit/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/abdul-basit/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Abdul-Basit-Abdus-Samad/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Abdul-Basit-Abdus-Samad/128/azan2.mp3'
+        }
     },
     "Al-Minshawi": {
         id: "minshawi",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mohammad-al-Minshawi/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mohammad-al-Minshawi/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/minshawi/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/minshawi/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mohammad-al-Minshawi/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mohammad-al-Minshawi/128/azan2.mp3'
+        }
     },
     "Al-Ghamdi": {
         id: "ghamdi",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Saad-al-Ghamdi/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Saad-al-Ghamdi/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/ghamdi/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/ghamdi/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Saad-al-Ghamdi/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Saad-al-Ghamdi/128/azan2.mp3'
+        }
     },
     "Al-Hussary": {
         id: "hussary",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mahmoud-Khalil-Al-Hussary/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mahmoud-Khalil-Al-Hussary/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/hussary/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/hussary/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mahmoud-Khalil-Al-Hussary/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mahmoud-Khalil-Al-Hussary/128/azan2.mp3'
+        }
     },
     "Mishary Rashid": {
         id: "mishary",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mishary-Rashid/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mishary-Rashid/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/mishary-rashid/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/mishary-rashid/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mishary-Rashid/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Mishary-Rashid/128/azan2.mp3'
+        }
     },
     "Ali Ahmad Mulla": {
         id: "mulla",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Ali-Ahmad-Mulla/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Ali-Ahmad-Mulla/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/mulla/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/mulla/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Ali-Ahmad-Mulla/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Ali-Ahmad-Mulla/128/azan2.mp3'
+        }
     },
     "Muhammad Al-Muaiqly": {
         id: "muaiqly",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Muhammad-al-Muaiqly/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Muhammad-al-Muaiqly/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/muaiqly/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/muaiqly/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Muhammad-al-Muaiqly/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Muhammad-al-Muaiqly/128/azan2.mp3'
+        }
     },
     "Masjid Al-Haram": {
         id: "makkah",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Makkah-Live/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Makkah-Live/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/makkah/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/makkah/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Makkah-Live/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Makkah-Live/128/azan2.mp3'
+        }
     },
     "Masjid An-Nabawi": {
         id: "madina",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Madina-Live/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Madina-Live/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/madina/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/madina/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Madina-Live/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Madina-Live/128/azan2.mp3'
+        }
     },
     "Yusuf Islam": {
         id: "yusuf",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Yusuf-Islam/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Yusuf-Islam/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/yusuf/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/yusuf/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Yusuf-Islam/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Yusuf-Islam/128/azan2.mp3'
+        }
     },
     "Sheikh Essam": {
         id: "essam",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Sheikh-Essam-Bukhari/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Sheikh-Essam-Bukhari/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/essam/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/essam/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Sheikh-Essam-Bukhari/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Sheikh-Essam-Bukhari/128/azan2.mp3'
+        }
     },
     "Ibrahim Al-Arkani": {
         id: "arkani",
-        fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Ibrahim-Al-Arkani/128/azan1.mp3',
-        other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Ibrahim-Al-Arkani/128/azan2.mp3'
+        fajr: 'https://cdn.islamic.network/adhans/arkani/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/arkani/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Ibrahim-Al-Arkani/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Ibrahim-Al-Arkani/128/azan2.mp3'
+        }
+    },
+    "Abdul Rahman Al-Sudais": {
+        id: "sudais",
+        fajr: 'https://cdn.islamic.network/adhans/sudais/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/sudais/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Abdul-Rahman-As-Sudais/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Abdul-Rahman-As-Sudais/128/azan2.mp3'
+        }
+    },
+    "Nasser Al-Qatami": {
+        id: "qatami",
+        fajr: 'https://cdn.islamic.network/adhans/qatami/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/qatami/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Nasser-Al-Qatami/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Nasser-Al-Qatami/128/azan2.mp3'
+        }
+    },
+    "Abdullah Al-Matrood": {
+        id: "matrood",
+        fajr: 'https://cdn.islamic.network/adhans/matrood/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/matrood/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Abdullah-Al-Matrood/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Abdullah-Al-Matrood/128/azan2.mp3'
+        }
+    },
+    "Abdullah Al-Johany": {
+        id: "johany",
+        fajr: 'https://cdn.islamic.network/adhans/johany/fajr.mp3',
+        other: 'https://cdn.islamic.network/adhans/johany/normal.mp3',
+        backup: {
+            fajr: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Abdullah-Al-Johany/128/azan1.mp3',
+            other: 'https://raw.githubusercontent.com/islamic-network/azan-files/master/Abdullah-Al-Johany/128/azan2.mp3'
+        }
     }
 };
 
-let currentQari = localStorage.getItem('selectedQari') || "Abdul Basit";
+// Global variables
+let currentQari = localStorage.getItem('selectedQari') || "Mishary Rashid";
 let scheduledAzans = [];
 let audioContext = null;
+let currentAudio = null;
+
+// Azan Player Module
+const AzanPlayer = {
+    // Initialize audio context on user interaction
+    initAudioContext() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log("AudioContext initialized");
+        }
+    },
+
+    // Load and cache audio for better performance
+    async preloadAudio(url, backupUrl) {
+        try {
+            this.initAudioContext();
+            console.log("Preloading audio from:", url);
+            
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                return await audioContext.decodeAudioData(arrayBuffer);
+            } catch (primaryError) {
+                console.log("Primary source failed, trying backup:", backupUrl);
+                const backupResponse = await fetch(backupUrl);
+                const backupBuffer = await backupResponse.arrayBuffer();
+                return await audioContext.decodeAudioData(backupBuffer);
+            }
+        } catch (error) {
+            console.error("Error preloading audio:", error);
+            throw error;
+        }
+    },
+
+    // Play audio with enhanced error handling
+    async playAzan(qariName, type = 'other') {
+        try {
+            this.initAudioContext();
+            
+            // Stop any currently playing audio
+            if (currentAudio) {
+                currentAudio.stop();
+                currentAudio = null;
+            }
+
+            // Get the correct URL based on the qari
+            const qari = qaris[qariName];
+            if (!qari) {
+                throw new Error(`Invalid Qari: ${qariName}`);
+            }
+
+            const primaryUrl = type === 'fajr' ? qari.fajr : qari.other;
+            const backupUrl = type === 'fajr' ? qari.backup.fajr : qari.backup.other;
+
+            console.log("Playing Azan from:", primaryUrl);
+            console.log("Backup URL:", backupUrl);
+
+            const audioBuffer = await this.preloadAudio(primaryUrl, backupUrl);
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioContext.destination);
+            
+            currentAudio = source;
+            source.start(0);
+
+            return new Promise((resolve) => {
+                source.onended = () => {
+                    currentAudio = null;
+                    resolve();
+                };
+            });
+        } catch (error) {
+            console.error("Error playing Azan:", error);
+            throw error;
+        }
+    },
+
+    // Change Qari and preload audio
+    async changeQari(qariName) {
+        try {
+            const qari = qaris[qariName];
+            if (!qari) {
+                throw new Error(`Invalid Qari: ${qariName}`);
+            }
+            
+            // Preload both normal and Fajr Azan
+            await Promise.all([
+                this.preloadAudio(qari.other, qari.backup.other),
+                this.preloadAudio(qari.fajr, qari.backup.fajr)
+            ]);
+            
+            currentQari = qariName;
+            localStorage.setItem('selectedQari', qariName);
+            console.log("Successfully preloaded audio for:", qariName);
+        } catch (error) {
+            console.error("Error preloading audio for new Qari:", error);
+            throw error;
+        }
+    },
+
+    // Request notification permissions
+    async requestNotificationPermission() {
+        try {
+            const permission = await Notification.requestPermission();
+            console.log("Notification permission:", permission);
+            return permission === "granted";
+        } catch (error) {
+            console.error("Error requesting notification permission:", error);
+            return false;
+        }
+    },
+
+    // Show Azan notification
+    showAzanNotification(prayerName) {
+        if (Notification.permission === "granted") {
+            const notification = new Notification("Prayer Time", {
+                body: `It's time for ${prayerName} prayer`,
+                icon: "https://cdn.islamic.network/icons/prayer.png",
+                silent: true // Don't play notification sound as we'll play Azan
+            });
+
+            notification.onclick = () => {
+                window.focus();
+                notification.close();
+            };
+        }
+    }
+};
+
+// Export the module and qaris
+window.AzanPlayer = AzanPlayer;
+window.AzanPlayer.qaris = qaris;
 
 // Initialize audio context on user interaction
-document.addEventListener('click', initializeAudioContext, { once: true });
-
-function initializeAudioContext() {
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        console.log("Audio context initialized");
-    }
-}
-
-// Function to get Azan URL based on prayer and current Qari
-function getAzanUrl(prayerName) {
-    console.log("Getting Azan URL for:", prayerName, "Qari:", currentQari);
-    const qari = qaris[currentQari];
-    if (!qari) {
-        console.error("Invalid Qari selected:", currentQari);
-        return null;
-    }
-    return prayerName === 'fajr' ? qari.fajr : qari.other;
-}
-
-// Function to preload audio
-async function preloadAudio(url) {
+document.addEventListener('click', () => {
     try {
-        const response = await fetch(url);
-        const arrayBuffer = await response.arrayBuffer();
-        console.log("Audio preloaded:", url);
-        return arrayBuffer;
+        AzanPlayer.initAudioContext();
     } catch (error) {
-        console.error("Error preloading audio:", error);
-        return null;
+        console.error("Error initializing audio context:", error);
     }
-}
-
-// Function to play Azan audio
-async function playAzan(prayerName) {
-    console.log("Playing Azan for:", prayerName);
-    
-    if (!audioContext) {
-        initializeAudioContext();
-    }
-
-    const url = getAzanUrl(prayerName);
-    if (!url) {
-        console.error("No audio URL available for:", prayerName);
-        return;
-    }
-
-    try {
-        const audio = new Audio(url);
-        
-        // Add event listeners for debugging
-        audio.addEventListener('loadstart', () => console.log('Audio loading started'));
-        audio.addEventListener('canplay', () => console.log('Audio can play'));
-        audio.addEventListener('playing', () => console.log('Audio playing'));
-        audio.addEventListener('ended', () => console.log('Audio finished'));
-        audio.addEventListener('error', (e) => console.error('Audio error:', e));
-
-        await audio.play();
-        
-        // Show notification if supported
-        if (Notification.permission === "granted") {
-            new Notification("Prayer Time", {
-                body: `It's time for ${prayerName} prayer (${currentQari})`,
-                icon: "/favicon.ico"
-            });
-        }
-    } catch (error) {
-        console.error("Error playing Azan:", error);
-        alert(`Error playing Azan: ${error.message}`);
-    }
-}
-
-// Function to schedule Azan for a specific prayer time
-function scheduleAzan(prayerName, prayerTime) {
-    console.log("Scheduling Azan for:", prayerName, "at:", prayerTime);
-    
-    const now = new Date();
-    const azanTime = new Date(prayerTime);
-    
-    // If prayer time has passed for today, schedule for tomorrow
-    if (azanTime < now) {
-        azanTime.setDate(azanTime.getDate() + 1);
-    }
-    
-    const timeUntilAzan = azanTime.getTime() - now.getTime();
-    console.log("Time until Azan (ms):", timeUntilAzan);
-    
-    const azanTimeout = setTimeout(() => {
-        playAzan(prayerName);
-    }, timeUntilAzan);
-    
-    scheduledAzans.push({
-        prayerName,
-        timeout: azanTimeout,
-        scheduledTime: azanTime
-    });
-}
-
-// Function to schedule all Azans for the day
-function scheduleAllAzans(prayerTimes) {
-    console.log("Scheduling all Azans for:", prayerTimes);
-    
-    // Clear existing scheduled Azans
-    scheduledAzans.forEach(scheduled => {
-        clearTimeout(scheduled.timeout);
-    });
-    scheduledAzans = [];
-    
-    // Schedule new Azans
-    Object.entries(prayerTimes).forEach(([prayerName, time]) => {
-        const lowerPrayerName = prayerName.toLowerCase();
-        if (lowerPrayerName === 'fajr' || 
-            lowerPrayerName === 'dhuhr' || 
-            lowerPrayerName === 'asr' || 
-            lowerPrayerName === 'maghrib' || 
-            lowerPrayerName === 'isha') {
-            scheduleAzan(lowerPrayerName, time);
-        }
-    });
-}
-
-// Function to change Qari
-function changeQari(qariName) {
-    console.log("Changing Qari to:", qariName);
-    if (qaris[qariName]) {
-        currentQari = qariName;
-        localStorage.setItem('selectedQari', qariName);
-        // Preload audio for the new Qari
-        preloadAudio(qaris[qariName].fajr);
-        preloadAudio(qaris[qariName].other);
-        return true;
-    }
-    return false;
-}
-
-// Function to get list of available Qaris
-function getAvailableQaris() {
-    return Object.keys(qaris);
-}
-
-// Function to get current Qari
-function getCurrentQari() {
-    return currentQari;
-}
-
-// Request notification permission
-function requestNotificationPermission() {
-    if (!("Notification" in window)) {
-        console.log("This browser does not support notifications");
-        return;
-    }
-    
-    if (Notification.permission !== "granted") {
-        Notification.requestPermission().then(permission => {
-            console.log("Notification permission:", permission);
-        });
-    }
-}
-
-// Export functions
-window.AzanPlayer = {
-    scheduleAllAzans,
-    requestNotificationPermission,
-    changeQari,
-    getAvailableQaris,
-    getCurrentQari,
-    getAzanUrl,
-    playAzan
-}; 
+}, { once: true }); 
