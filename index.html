@@ -583,7 +583,11 @@
                     console.warn('CDN Adhan.js failed, trying local version...');
                     const localScript = document.createElement('script');
                     localScript.src = 'js/adhan.js';
-                    localScript.onerror = () => reject(new Error('Failed to load Adhan.js'));
+                    localScript.onerror = () => {
+                        const error = new Error('Failed to load Adhan.js from both CDN and local sources');
+                        console.error(error);
+                        reject(error);
+                    };
                     localScript.onload = resolve;
                     document.body.appendChild(localScript);
                 };
@@ -597,7 +601,24 @@
             console.error('Error loading Adhan.js:', error);
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
-            errorDiv.textContent = 'Failed to load prayer calculation library. Please check your internet connection and refresh the page.';
+            errorDiv.innerHTML = `
+                Failed to load prayer calculation library. 
+                <br>
+                Please check your internet connection and refresh the page.
+                <br>
+                <small>Error: ${error.message}</small>
+                <button onclick="this.parentElement.remove()" style="
+                    position: absolute;
+                    top: 0.5rem;
+                    right: 0.5rem;
+                    background: none;
+                    border: none;
+                    color: #c00;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    padding: 0 0.5rem;
+                ">×</button>
+            `;
             document.body.insertBefore(errorDiv, document.body.firstChild);
         });
     </script>
