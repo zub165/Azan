@@ -1,0 +1,1 @@
+Couldn't find the requested file /dist/adhan.min.js in adhan.

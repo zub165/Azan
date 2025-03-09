@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azan Times & Islamic Calendar</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.3/dist/adhan.min.js"></script>
+    <style>
+        /* Add your CSS styles here */
+        .qibla-compass {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            margin: 20px auto;
+        }
+        .qibla-arrow {
+            width: 100%;
+            height: 100%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Compass_rose_simple.svg/1200px-Compass_rose_simple.svg.png') no-repeat center;
+            background-size: contain;
+            transform-origin: center;
+            transition: transform 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Azan Times & Islamic Calendar</h1>
+            <p id="currentTime"></p>
+        </div>
+
+        <div class="calculation-method">
+            <h2><span class="material-icons">calculate</span> Prayer Time Calculation Method</h2>
+            <div style="margin-top: 15px;">
+                <select id="calculationMethodSelect">
+                    <option value="MuslimWorldLeague">Muslim World League</option>
+                    <option value="Egyptian">Egyptian General Authority</option>
+                    <option value="Karachi">University of Islamic Sciences, Karachi</option>
+                    <option value="UmmAlQura">Umm Al-Qura University, Makkah</option>
+                    <option value="Dubai">Dubai (UAE)</option>
+                    <option value="MoonsightingCommittee">Moonsighting Committee</option>
+                    <option value="NorthAmerica">Islamic Society of North America</option>
+                    <option value="Kuwait">Kuwait</option>
+                    <option value="Qatar">Qatar</option>
+                    <option value="Singapore">Singapore</option>
+                </select>
+                <div id="methodInfo" class="method-info"></div>
+                <div class="madhab-selector">
+                    <label class="madhab-option">
+                        <input type="radio" name="madhab" value="Shafi" checked> Shafi'i
+                    </label>
+                    <label class="madhab-option">
+                        <input type="radio" name="madhab" value="Hanafi"> Hanafi
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="qari-selector">
+            <h2><span class="material-icons">record_voice_over</span> Muazzin Selection</h2>
+            <div style="margin-top: 15px;">
+                <select id="qariSelect"></select>
+                <button class="test-azan-btn" onclick="testAzan()">Test Azan</button>
+            </div>
+        </div>
+
+        <div class="location-info">
+            <h2><span class="material-icons">location_on</span> Location Information</h2>
+            <p id="locationDetails">Detecting location...</p>
+        </div>
+
+        <div class="prayer-times">
+            <!-- Prayer cards here -->
+        </div>
+
+        <div class="qibla-compass">
+            <h2><span class="material-icons">explore</span> Qibla Direction</h2>
+            <div class="qibla-arrow" id="qiblaArrow"></div>
+            <p id="qiblaDirectionText"></p>
+        </div>
+
+        <div class="moon-phase">
+            <!-- Moon phase section here -->
+        </div>
+
+        <div class="islamic-date">
+            <!-- Islamic date section here -->
+        </div>
+    </div>
+
+    <script>
+        let latitude, longitude;
+        let currentPrayerTimes;
+        let currentCalculationMethod = localStorage.getItem('calculationMethod') || 'MuslimWorldLeague';
+        let currentMadhab = localStorage.getItem('madhab') || 'Shafi';
+
+        const calculationMethodInfo = {
+            MuslimWorldLeague: "Standard method used by the Muslim World League. Fajr: 18°, Isha: 17°",
+            Egyptian: "Egyptian General Authority of Survey. Fajr: 19.5°, Isha: 17.5°",
+            Karachi: "University of Islamic Sciences, Karachi. Fajr: 18°, Isha: 18°",
+            UmmAlQura: "Umm Al-Qura University, Makkah. Fajr: 18.5°, Isha: 90min after Maghrib",
+            Dubai: "UAE Method. Fajr: 18.2°, Isha: 18.2°",
+            MoonsightingCommittee: "Moonsighting Committee. Fajr: 18°, Isha: 18°",
+            NorthAmerica: "Islamic Society of North America. Fajr: 15°, Isha: 15°",
+            Kuwait: "Kuwait Method. Fajr: 18°, Isha: 17.5°",
+            Qatar: "Qatar Method. Fajr: 18°, Isha: 90min after Maghrib",
+            Singapore: "Singapore Method. Fajr: 20°, Isha: 18°"
+        };
+
+        // Initialize calculation method selector
+        function initializeCalculationMethod() {
+            const select = document.getElementById('calculationMethodSelect');
+            const madhabInputs = document.querySelectorAll('input[name="madhab"]');
+            
+            select.value = currentCalculationMethod;
+            updateMethodInfo(currentCalculationMethod);
+
+            madhabInputs.forEach(input => {
+                if (input.value === currentMadhab) {
+                    input.checked = true;
+                }
+                input.addEventListener('change', (e) => {
+                    currentMadhab = e.target.value;
+                    localStorage.setItem('madhab', currentMadhab);
+                    if (latitude && longitude) {
+                        calculatePrayerTimes();
+                    }
+                });
+            });
+
+            select.addEventListener('change', (e) => {
+                currentCalculationMethod = e.target.value;
+                localStorage.setItem('calculationMethod', currentCalculationMethod);
+                updateMethodInfo(currentCalculationMethod);
+                if (latitude && longitude) {
+                    calculatePrayerTimes();
+                }
+            });
+        }
+
+        function updateMethodInfo(method) {
+            const infoDiv = document.getElementById('methodInfo');
+            infoDiv.textContent = calculationMethodInfo[method];
+            infoDiv.classList.add('show');
+        }
+
+        // Get user's location
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition, handleLocationError);
+            } else {
+                handleLocationError({ code: 0, message: "Geolocation is not supported" });
+            }
+        }
+
+        function handleLocationError(error) {
+            console.log("Using default location due to:", error);
+            showPosition({
+                coords: {
+                    latitude: 21.4225,  // Makkah coordinates as default
+                    longitude: 39.8262
+                }
+            });
+            
+            let errorMessage = "Using default location (Makkah). Error: ";
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage += "Location access denied.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage += "Location unavailable.";
+                    break;
+                case error.TIMEOUT:
+                    errorMessage += "Location request timed out.";
+                    break;
+                default:
+                    errorMessage += "Unknown error occurred.";
+            }
+            document.getElementById('locationDetails').innerHTML = errorMessage;
+        }
+
+        async function showPosition(position) {
+            try {
+                latitude = position.coords.latitude;
+                longitude = position.coords.longitude;
+                
+                document.getElementById('locationDetails').innerHTML = `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} (Getting location name...)`;
+                
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`);
+                    if (!response.ok) throw new Error('Location lookup failed');
+                    
+                    const data = await response.json();
+                    const locationName = data.display_name || 'Location name unavailable';
+                    document.getElementById('locationDetails').innerHTML = locationName;
+                } catch (error) {
+                    console.error("Error getting location name:", error);
+                    document.getElementById('locationDetails').innerHTML = `Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                }
+                
+                // Calculate prayer times and Qibla direction
+                calculatePrayerTimes();
+                calculateQiblaDirection();
+            } catch (error) {
+                console.error("Error processing position:", error);
+                handleLocationError(error);
+            }
+        }
+
+        // Calculate Qibla direction
+        function calculateQiblaDirection() {
+            if (!latitude || !longitude) return;
+
+            const coordinates = new Adhan.Coordinates(latitude, longitude);
+            const qiblaDirection = Adhan.Qibla(coordinates);
+            document.getElementById('qiblaDirectionText').textContent = `Qibla Direction: ${qiblaDirection.toFixed(2)}° from North`;
+            document.getElementById('qiblaArrow').style.transform = `rotate(${qiblaDirection}deg)`;
+        }
+
+        // Test Azan audio
+        function testAzan() {
+            const qariSelect = document.getElementById('qariSelect');
+            const selectedQari = qariSelect.value;
+            const azanUrl = `https://cdn.islamic.network/adhan/${selectedQari}/audio/adhan.mp3`;
+            const audio = new Audio(azanUrl);
+            audio.crossOrigin = "anonymous";
+            audio.play().catch(error => console.error("Playback error:", error));
+        }
+
+        // Initialize
+        getLocation();
+        initializeCalculationMethod();
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+    </script>
+</body>
+</html>
