@@ -1,3 +1,13 @@
+# Large audio files
+audio/adhans/abdul-basit/normal.mp3
+audio/adhans/madina/normal.mp3
+audio/adhans/mishary-rashid/normal.mp3
+
+# General audio files
+*.mp3
+!audio/adhans/Local/*.mp3
+!audio/adhans/islamcan/*.mp3
+
 # OS generated files
 .DS_Store
 .DS_Store?
