@@ -456,86 +456,95 @@ window.onload = async function () {
     }
 };
 
-// Modify calculatePrayerTimes to be more robust
+// Update the main prayer calculation function to handle DST transitions
 async function calculatePrayerTimes(retryCount = 3) {
     try {
         if (!latitude || !longitude) {
             throw new Error('Location coordinates not available');
         }
 
-        // Check if Adhan is available
-        if (typeof Adhan === 'undefined') {
-            throw new Error('Adhan library not available');
-        }
-
         // Create coordinates object
-    const coordinates = new Adhan.Coordinates(latitude, longitude);
-    const date = new Date();
+        const coordinates = new Adhan.Coordinates(latitude, longitude);
+        const date = new Date();
+        
+        // Check for DST transition
+        const dstAdjustment = getDSTAdjustment(date);
+        if (dstAdjustment !== 0) {
+            console.log(`DST is in effect with adjustment of ${dstAdjustment} hours`);
+        }
         
         // Get calculation parameters based on method
-    const params = getCalculationParameters();
-        if (!params) {
-            throw new Error('Invalid calculation parameters');
+        const params = getCalculationParameters();
+        
+        // Handle high latitude adjustments
+        if (Math.abs(latitude) >= 45) {
+            params.highLatitudeRule = getHighLatitudeRule();
+            console.log(`Using high latitude rule: ${params.highLatitudeRule}`);
         }
 
-        // Handle high latitude adjustments
-    if (Math.abs(latitude) >= 45) {
-        params.highLatitudeRule = getHighLatitudeRule();
-    }
-
-    try {
+        try {
+            // Get timezone with DST awareness
+            const timezone = getTimezoneWithDST(date);
+            console.log(`Using timezone offset: ${timezone}`);
+            
             // Calculate prayer times using Adhan.js
-        const prayerTimes = new Adhan.PrayerTimes(coordinates, date, params);
+            const prayerTimes = new Adhan.PrayerTimes(coordinates, date, params);
             
             // Format times using moment.js
-        const times = {
-            fajr: moment(prayerTimes.fajr),
-            sunrise: moment(prayerTimes.sunrise),
-            dhuhr: moment(prayerTimes.dhuhr),
-            asr: moment(prayerTimes.asr),
-            maghrib: moment(prayerTimes.maghrib),
-            isha: moment(prayerTimes.isha)
-        };
+            const times = {
+                fajr: moment(prayerTimes.fajr),
+                sunrise: moment(prayerTimes.sunrise),
+                dhuhr: moment(prayerTimes.dhuhr),
+                asr: moment(prayerTimes.asr),
+                maghrib: moment(prayerTimes.maghrib),
+                isha: moment(prayerTimes.isha)
+            };
 
             // Validate prayer times
-        if (!validatePrayerTimes(times)) {
-            throw new Error('Invalid prayer times calculated');
-        }
+            if (!validatePrayerTimes(times)) {
+                throw new Error('Invalid prayer times calculated');
+            }
 
-        // Calculate optional prayers
-        times.tahajjud = calculateTahajjudTime(times.isha, times.fajr);
-        times.suhoor = calculateSuhoorTime(times.fajr);
-        times.ishraq = calculateIshraqTime(times.sunrise);
+            // Calculate optional prayer times
+            times.tahajjud = calculateTahajjudTime(times.isha, times.fajr);
+            times.suhoor = calculateSuhoorTime(times.fajr);
+            times.ishraq = calculateIshraqTime(times.sunrise);
 
             // Store times for countdown
-        currentPrayerTimes = { ...times };
+            currentPrayerTimes = { ...times };
 
-        // Update UI
+            // Update UI
             updatePrayerTimesUI(times);
-
-            // Reset any error states
-            document.getElementById('locationDetails').classList.remove('error');
-            document.getElementById('locationDetails').textContent = 
-                `Latitude: ${latitude.toFixed(4)}, Longitude: ${longitude.toFixed(4)}`;
-
+            
             return times;
 
-        } catch (error) {
-            console.error("Local calculation failed:", error);
-            throw error;
+        } catch (localError) {
+            console.error("Local calculation failed:", localError);
+            
+            // Fallback to Al Adhan API
+            return await fallbackToAPI();
         }
 
     } catch (error) {
-        console.warn("Prayer time calculation error:", error);
+        console.error("Error calculating prayer times:", error);
+        
         if (retryCount > 0) {
-            console.log(`Retrying calculation... (${retryCount} attempts left)`);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log(`Retrying calculation (${retryCount} attempts left)...`);
             return calculatePrayerTimes(retryCount - 1);
-        } else {
-            // Fallback to API
-            console.log("Falling back to API after calculation failures");
-            return await fallbackToAPI();
         }
+        
+        document.getElementById('locationDetails').innerHTML += `<br>Error calculating prayer times: ${error.message}. Please try refreshing the page.`;
+        
+        // Clear all time displays
+        ['tahajjud', 'suhoor', 'fajr', 'sunrise', 'ishraq', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach(prayer => {
+            const timeElement = document.getElementById(`${prayer}Time`);
+            if (timeElement) {
+                timeElement.textContent = '--:--';
+            }
+        });
+        
+        // Try API fallback as last resort
+        return await fallbackToAPI();
     }
 }
 
@@ -648,10 +657,37 @@ function calculatePrayerTime(h, decl, lat) {
     return H;
 }
 
+// Add improved DST detection and handling
+function getDSTAdjustment(date) {
+    // Create two dates: one in January (standard time) and the current date
+    const januaryDate = new Date(date.getFullYear(), 0, 1);
+    const currentDate = new Date(date);
+    
+    // Get timezone offsets for both dates
+    const januaryOffset = januaryDate.getTimezoneOffset();
+    const currentOffset = currentDate.getTimezoneOffset();
+    
+    // If the offsets are different, DST is in effect
+    const isDST = currentOffset < januaryOffset;
+    
+    // Return the DST adjustment in hours (typically 1 hour)
+    return isDST ? (januaryOffset - currentOffset) / 60 : 0;
+}
+
+// Update timezone calculation with DST awareness
+function getTimezoneWithDST(date) {
+    const standardTimezoneOffset = -new Date().getTimezoneOffset() / 60;
+    const dstAdjustment = getDSTAdjustment(date);
+    
+    console.log(`Timezone calculation: Standard offset: ${standardTimezoneOffset}, DST adjustment: ${dstAdjustment}`);
+    
+    return standardTimezoneOffset;
+}
+
 // Update the prayer time calculation functions
 function calculateDhuhr(date, eqt) {
-    // Dhuhr time calculation using provided formula
-    const timezone = -new Date().getTimezoneOffset() / 60;
+    // Dhuhr time calculation using provided formula with DST awareness
+    const timezone = getTimezoneWithDST(date);
     const dhuhrTime = 12 + eqt/60 - longitude/15 + timezone;
     
     return moment(date)
@@ -661,8 +697,8 @@ function calculateDhuhr(date, eqt) {
 
 function calculateTimeByAngle(date, angle, isBefore, decl, eqt) {
     try {
-        // Get timezone offset
-        const timezone = -new Date().getTimezoneOffset() / 60;
+        // Get timezone offset with DST awareness
+        const timezone = getTimezoneWithDST(date);
         
         // Calculate hour angle
         const H = calculatePrayerTime(angle, decl, latitude);
@@ -1004,20 +1040,15 @@ function calculateSunrise(date, decl, eqt) {
 }
 
 function calculateAsr(date, decl, eqt) {
-    try {
-        // Get shadow length multiplier based on madhab
-        const shadowLength = currentMadhab === 'Hanafi' ? 2 : 1;
-        console.log(`Calculating Asr with ${currentMadhab} method (shadow length: ${shadowLength})`);
-        
-        // Calculate Asr angle based on shadow length
-        const zenithDistance = Math.abs(latitude - decl);
-        const asrAngle = Math.atan(1 / (shadowLength + Math.tan(zenithDistance * Math.PI / 180))) * 180 / Math.PI;
-        
-        return calculateTimeByAngle(date, asrAngle, false, decl, eqt);
-    } catch (error) {
-        console.error('Error calculating Asr time:', error);
-        throw error;
-    }
+    // Get shadow length multiplier based on madhab with improved handling
+    const shadowLength = getMadhabShadowLength(currentMadhab);
+    console.log(`Calculating Asr with ${currentMadhab} madhab (shadow length: ${shadowLength})`);
+    
+    // Calculate Asr time
+    const angle = Math.atan(1/(shadowLength + Math.tan(Math.abs(latitude - decl))));
+    const H = angle * (180/Math.PI) / 15;
+    
+    return calculateTimeByAngle(date, H, false, decl, eqt);
 }
 
 function calculateMaghrib(date, decl, eqt) {
@@ -1121,19 +1152,53 @@ function getHighLatitudeAdjustmentMethod(latitude) {
     return HIGH_LATITUDE_METHODS.MiddleOfNight;
 }
 
+// Improved Madhab handling
+function getMadhabShadowLength(madhab) {
+    // Validate and normalize madhab input
+    const normalizedMadhab = String(madhab || '').trim();
+    
+    // Handle different possible formats of madhab names
+    if (/^hanafi$/i.test(normalizedMadhab)) {
+        return 2; // Hanafi uses 2x shadow length
+    } else if (/^shafi/i.test(normalizedMadhab) || /^hanbali/i.test(normalizedMadhab) || /^maliki/i.test(normalizedMadhab)) {
+        return 1; // Shafi, Hanbali, and Maliki use 1x shadow length
+    } else {
+        console.warn(`Unknown madhab "${madhab}", defaulting to Shafi (1x shadow length)`);
+        return 1; // Default to Shafi if unknown
+    }
+}
+
 // Update handleMadhabChange to be more reliable
 async function handleMadhabChange(madhab) {
     try {
         console.log(`Updating calculations for madhab: ${madhab}`);
         
-        // Validate madhab
-        if (!['Shafi', 'Hanafi'].includes(madhab)) {
-            throw new Error('Invalid madhab specified');
+        // Validate madhab with more flexibility
+        const normalizedMadhab = String(madhab || '').trim();
+        let validMadhab;
+        
+        if (/^hanafi$/i.test(normalizedMadhab)) {
+            validMadhab = 'Hanafi';
+        } else if (/^shafi/i.test(normalizedMadhab)) {
+            validMadhab = 'Shafi';
+        } else if (/^hanbali/i.test(normalizedMadhab)) {
+            validMadhab = 'Shafi'; // Use Shafi calculation for Hanbali
+        } else if (/^maliki/i.test(normalizedMadhab)) {
+            validMadhab = 'Shafi'; // Use Shafi calculation for Maliki
+        } else {
+            console.warn(`Invalid madhab "${madhab}", defaulting to Shafi`);
+            validMadhab = 'Shafi'; // Default to Shafi
         }
 
         // Update madhab
-        currentMadhab = madhab;
-        localStorage.setItem('madhab', madhab);
+        currentMadhab = validMadhab;
+        localStorage.setItem('madhab', validMadhab);
+        
+        // Update UI to reflect the change
+        const madhabInput = document.querySelector(`input[name="madhab"][value="${validMadhab}"]`);
+        if (madhabInput) {
+            madhabInput.checked = true;
+        }
 
         // Clear current times
         currentPrayerTimes = null;
@@ -1145,7 +1210,7 @@ async function handleMadhabChange(madhab) {
             throw new Error('Failed to calculate new prayer times');
         }
 
-        console.log(`Prayer times updated successfully for ${madhab} madhab`);
+        console.log(`Prayer times updated successfully for ${validMadhab} madhab`);
         return times;
 
     } catch (error) {
