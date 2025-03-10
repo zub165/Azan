@@ -382,9 +382,83 @@ const localAdhans = {
 // Azan Player Object
 class AzanPlayer {
     constructor() {
-        this.audio = new Audio();
+        // Initialize audio context
+        this.audioContext = null;
         this.currentPrayer = null;
-        this.prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+        this.availablePrayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+        this.audio = new Audio();
+        this.verifiedAudioFiles = new Map();
+        
+        // Initialize audio files
+        this.audioFiles = {
+            'islamcan-19': {
+                fajr: 'audio/islamcan/19/fajr.mp3',
+                dhuhr: 'audio/islamcan/19/dhuhr.mp3',
+                asr: 'audio/islamcan/19/asr.mp3',
+                maghrib: 'audio/islamcan/19/maghrib.mp3',
+                isha: 'audio/islamcan/19/isha.mp3'
+            },
+            'islamcan-20': {
+                fajr: 'audio/islamcan/20/fajr.mp3',
+                dhuhr: 'audio/islamcan/20/dhuhr.mp3',
+                asr: 'audio/islamcan/20/asr.mp3',
+                maghrib: 'audio/islamcan/20/maghrib.mp3',
+                isha: 'audio/islamcan/20/isha.mp3'
+            },
+            'islamcan-21': {
+                fajr: 'audio/islamcan/21/fajr.mp3',
+                dhuhr: 'audio/islamcan/21/dhuhr.mp3',
+                asr: 'audio/islamcan/21/asr.mp3',
+                maghrib: 'audio/islamcan/21/maghrib.mp3',
+                isha: 'audio/islamcan/21/isha.mp3'
+            },
+            'beep': {
+                fajr: 'audio/beep.mp3',
+                dhuhr: 'audio/beep.mp3',
+                asr: 'audio/beep.mp3',
+                maghrib: 'audio/beep.mp3',
+                isha: 'audio/beep.mp3'
+            },
+            // Assabile audio files
+            'assabile-madina': {
+                fajr: 'audio/assabile/madina_adhan.mp3',
+                dhuhr: 'audio/assabile/madina_adhan.mp3',
+                asr: 'audio/assabile/madina_adhan.mp3',
+                maghrib: 'audio/assabile/madina_adhan.mp3',
+                isha: 'audio/assabile/madina_adhan.mp3'
+            },
+            'assabile-makkah': {
+                fajr: 'audio/assabile/makkah_adhan.mp3',
+                dhuhr: 'audio/assabile/makkah_adhan.mp3',
+                asr: 'audio/assabile/makkah_adhan.mp3',
+                maghrib: 'audio/assabile/makkah_adhan.mp3',
+                isha: 'audio/assabile/makkah_adhan.mp3'
+            },
+            'assabile-mishary': {
+                fajr: 'audio/assabile/mishary_adhan.mp3',
+                dhuhr: 'audio/assabile/mishary_adhan.mp3',
+                asr: 'audio/assabile/mishary_adhan.mp3',
+                maghrib: 'audio/assabile/mishary_adhan.mp3',
+                isha: 'audio/assabile/mishary_adhan.mp3'
+            },
+            'assabile-abdul-basit': {
+                fajr: 'audio/assabile/abdul_basit_adhan.mp3',
+                dhuhr: 'audio/assabile/abdul_basit_adhan.mp3',
+                asr: 'audio/assabile/abdul_basit_adhan.mp3',
+                maghrib: 'audio/assabile/abdul_basit_adhan.mp3',
+                isha: 'audio/assabile/abdul_basit_adhan.mp3'
+            },
+            'assabile-fajr-special': {
+                fajr: 'audio/assabile/fajr_adhan.mp3',
+                dhuhr: 'audio/assabile/mishary_adhan.mp3',
+                asr: 'audio/assabile/mishary_adhan.mp3',
+                maghrib: 'audio/assabile/mishary_adhan.mp3',
+                isha: 'audio/assabile/mishary_adhan.mp3'
+            }
+        };
+        
+        // Initialize audio context
+        this.initAudioContext();
     }
 
     async initAudioContext() {
@@ -395,50 +469,45 @@ class AzanPlayer {
     }
 
     async verifyAudioFile(filePath) {
-        // Check cache first
-        if (verifiedAudioFiles.has(filePath)) {
-            return verifiedAudioFiles.get(filePath);
-        }
-
         try {
-            // Ensure the file path is properly encoded
-            const encodedPath = filePath.split('/').map(part => encodeURIComponent(part)).join('/');
-            console.log(`Verifying audio file: ${encodedPath}`);
-            
-            // Try HEAD request first
-            try {
-                const response = await fetch(encodedPath, { 
-                    method: 'HEAD',
-                    cache: 'no-cache'
-                });
-                if (response.ok) {
-                    console.log(`File verified via HEAD: ${filePath}`);
-                    verifiedAudioFiles.set(filePath, true);
-                    return true;
-                }
-            } catch (headError) {
-                console.debug(`HEAD request failed for ${filePath}, trying GET request`);
+            // Check if we've already verified this file
+            if (this.verifiedAudioFiles.has(filePath)) {
+                return this.verifiedAudioFiles.get(filePath);
             }
 
-            // If HEAD fails, try GET request
-            const response = await fetch(encodedPath, { 
-                method: 'GET',
-                cache: 'no-cache'
-            });
+            console.log(`Verifying audio file: ${filePath}`);
             
-            const isValid = response.ok;
-            verifiedAudioFiles.set(filePath, isValid);
+            // Encode the file path
+            const encodedPath = encodeURI(filePath);
             
-            if (!isValid) {
-                console.warn(`Audio file not found: ${filePath}`);
-            } else {
-                console.log(`File verified via GET: ${filePath}`);
+            try {
+                // Try a HEAD request first (more efficient)
+                const response = await fetch(encodedPath, { method: 'HEAD' });
+                const exists = response.ok;
+                
+                console.log(`File ${filePath} exists: ${exists}`);
+                this.verifiedAudioFiles.set(filePath, exists);
+                return exists;
+            } catch (headError) {
+                console.warn(`HEAD request failed for ${filePath}, trying GET: ${headError}`);
+                
+                // If HEAD fails, try a GET request as fallback
+                try {
+                    const response = await fetch(encodedPath);
+                    const exists = response.ok;
+                    
+                    console.log(`File ${filePath} exists (via GET): ${exists}`);
+                    this.verifiedAudioFiles.set(filePath, exists);
+                    return exists;
+                } catch (getError) {
+                    console.error(`GET request also failed for ${filePath}: ${getError}`);
+                    this.verifiedAudioFiles.set(filePath, false);
+                    return false;
+                }
             }
-            
-            return isValid;
         } catch (error) {
             console.error(`Error verifying audio file ${filePath}:`, error);
-            verifiedAudioFiles.set(filePath, false);
+            this.verifiedAudioFiles.set(filePath, false);
             return false;
         }
     }
@@ -547,7 +616,7 @@ class AzanPlayer {
         const missingFiles = [];
         
         // First check default and local Adhans
-        for (const prayer of this.prayers) {
+        for (const prayer of this.availablePrayers) {
             const defaultPath = localAdhans['default'].files[prayer];
             const exists = await this.verifyAudioFile(defaultPath);
             if (!exists) {
@@ -572,60 +641,102 @@ class AzanPlayer {
 
     async initializeQariSelectors() {
         console.log("Initializing Qari selectors...");
-        await this.verifyAudioStructure();
-
-        for (const prayer of this.prayers) {
-            const qariSelect = document.getElementById(`${prayer}QariSelect`);
-            const notifSelect = document.getElementById(`${prayer}NotifType`);
+        
+        // Verify audio structure
+        if (!this.audioFiles) {
+            console.error("Audio files not initialized");
+            return;
+        }
+        
+        // Define available Muazzins with user-friendly names
+        const availableMuazzins = [
+            { id: 'islamcan-19', name: 'IslamCan 19' },
+            { id: 'islamcan-20', name: 'IslamCan 20' },
+            { id: 'islamcan-21', name: 'IslamCan 21' },
+            { id: 'assabile-madina', name: 'Assabile - Madina' },
+            { id: 'assabile-makkah', name: 'Assabile - Makkah' },
+            { id: 'assabile-mishary', name: 'Assabile - Mishary Rashid' },
+            { id: 'assabile-abdul-basit', name: 'Assabile - Abdul Basit' },
+            { id: 'assabile-fajr-special', name: 'Assabile - Fajr Special' }
+        ];
+        
+        // Iterate over prayers
+        for (const prayer of this.availablePrayers) {
+            // Get selectors
+            const qariSelector = document.getElementById(`${prayer}QariSelect`);
+            const notifTypeSelector = document.getElementById(`${prayer}NotifType`);
             
-            if (!qariSelect || !notifSelect) {
-                console.warn(`Selectors for ${prayer} not found`);
+            if (!qariSelector) {
+                console.warn(`Qari selector for ${prayer} not found`);
                 continue;
             }
-
+            
             // Clear existing options
-            qariSelect.innerHTML = '';
-            console.log(`Populating options for ${prayer} prayer...`);
-
+            qariSelector.innerHTML = '';
+            
             // Add available Muazzins
-            for (const [key, muazzin] of Object.entries(localAdhans)) {
+            for (const muazzin of availableMuazzins) {
                 try {
-                    const audioPath = muazzin.files[prayer];
-                    console.log(`Checking ${muazzin.name} (${key}) for ${prayer}: ${audioPath}`);
-                    const exists = await this.verifyAudioFile(audioPath);
-                    console.log(`${muazzin.name} (${key}) for ${prayer}: ${exists ? 'Available' : 'Not found'}`);
-                    
-                    if (exists) {
-                        const option = document.createElement('option');
-                        option.value = key;
-                        option.textContent = muazzin.name;
-                        qariSelect.appendChild(option);
-                        console.log(`Added ${muazzin.name} to ${prayer} options`);
+                    // Check if this Muazzin has audio for this prayer
+                    const audioPath = this.audioFiles[muazzin.id]?.[prayer];
+                    if (!audioPath) {
+                        console.warn(`No audio path found for ${muazzin.id} - ${prayer}`);
+                        continue;
                     }
+                    
+                    // Verify audio file exists
+                    const exists = await this.verifyAudioFile(audioPath);
+                    if (!exists) {
+                        console.warn(`Audio file not found for ${muazzin.id} - ${prayer}: ${audioPath}`);
+                        continue;
+                    }
+                    
+                    // Add option to selector
+                    const option = document.createElement('option');
+                    option.value = muazzin.id;
+                    option.textContent = muazzin.name;
+                    qariSelector.appendChild(option);
                 } catch (error) {
-                    console.error(`Error checking ${muazzin.name} for ${prayer}:`, error);
+                    console.error(`Error checking Muazzin ${muazzin.id} for ${prayer}:`, error);
                 }
             }
-
-            // Set saved selections or defaults
-            const savedQari = localStorage.getItem(`${prayer}Qari`) || 'default';
-            const savedNotifType = localStorage.getItem(`${prayer}NotifType`) || 'adhan';
-
-            if (qariSelect.querySelector(`option[value="${savedQari}"]`)) {
-                qariSelect.value = savedQari;
-                console.log(`Set ${prayer} to saved selection: ${savedQari}`);
-            } else if (qariSelect.options.length > 0) {
-                qariSelect.value = qariSelect.options[0].value;
-                localStorage.setItem(`${prayer}Qari`, qariSelect.value);
-                console.log(`Set ${prayer} to first available option: ${qariSelect.value}`);
-            }
-
-            notifSelect.value = savedNotifType;
-            console.log(`Set ${prayer} notification type to: ${savedNotifType}`);
             
-            // Log final number of options
-            console.log(`${prayer} has ${qariSelect.options.length} available Muazzins`);
+            // Add beep option
+            const beepOption = document.createElement('option');
+            beepOption.value = 'beep';
+            beepOption.textContent = 'Beep Sound';
+            qariSelector.appendChild(beepOption);
+            
+            // Set saved selection or default
+            const savedQari = localStorage.getItem(`${prayer}Qari`);
+            if (savedQari && qariSelector.querySelector(`option[value="${savedQari}"]`)) {
+                qariSelector.value = savedQari;
+            } else if (qariSelector.options.length > 0) {
+                // Set first available option as default
+                qariSelector.value = qariSelector.options[0].value;
+                localStorage.setItem(`${prayer}Qari`, qariSelector.value);
+            }
+            
+            // Set notification type if selector exists
+            if (notifTypeSelector) {
+                const savedNotifType = localStorage.getItem(`${prayer}NotifType`) || 'adhan';
+                if (notifTypeSelector.querySelector(`option[value="${savedNotifType}"]`)) {
+                    notifTypeSelector.value = savedNotifType;
+                }
+                
+                // Add change event listener
+                notifTypeSelector.addEventListener('change', (e) => {
+                    localStorage.setItem(`${prayer}NotifType`, e.target.value);
+                });
+            }
+            
+            // Add change event listener for Qari selector
+            qariSelector.addEventListener('change', (e) => {
+                localStorage.setItem(`${prayer}Qari`, e.target.value);
+            });
         }
+        
+        console.log("Qari selectors initialized");
     }
 
     async playAdhan(prayer) {

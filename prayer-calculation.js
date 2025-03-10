@@ -657,31 +657,201 @@ function calculatePrayerTime(h, decl, lat) {
     return H;
 }
 
-// Add improved DST detection and handling
-function getDSTAdjustment(date) {
-    // Create two dates: one in January (standard time) and the current date
-    const januaryDate = new Date(date.getFullYear(), 0, 1);
-    const currentDate = new Date(date);
+// Enhanced DST handling with user preferences
+let dstHandlingMode = 'auto'; // Default to automatic
+let customDstAdjustment = 0;  // Default to no adjustment
+
+// Initialize DST settings
+function initializeDSTSettings() {
+    console.log("Initializing DST settings...");
     
-    // Get timezone offsets for both dates
-    const januaryOffset = januaryDate.getTimezoneOffset();
-    const currentOffset = currentDate.getTimezoneOffset();
-    
-    // If the offsets are different, DST is in effect
-    const isDST = currentOffset < januaryOffset;
-    
-    // Return the DST adjustment in hours (typically 1 hour)
-    return isDST ? (januaryOffset - currentOffset) / 60 : 0;
+    try {
+        // Load saved DST handling preference
+        dstHandlingMode = localStorage.getItem('dstHandlingMode') || 'auto';
+        customDstAdjustment = parseInt(localStorage.getItem('customDstAdjustment') || '0');
+        
+        // Set up radio buttons
+        const dstRadios = document.querySelectorAll('input[name="dstHandling"]');
+        dstRadios.forEach(radio => {
+            if (radio.value === dstHandlingMode) {
+                radio.checked = true;
+            }
+            
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    dstHandlingMode = this.value;
+                    localStorage.setItem('dstHandlingMode', dstHandlingMode);
+                    
+                    // Enable/disable custom adjustment dropdown
+                    const customAdjustment = document.getElementById('customDstAdjustment');
+                    if (customAdjustment) {
+                        customAdjustment.disabled = (dstHandlingMode !== 'custom');
+                    }
+                    
+                    // Recalculate prayer times with new DST settings
+                    calculatePrayerTimes().then(() => {
+                        console.log("Prayer times recalculated with new DST settings");
+                    }).catch(error => {
+                        console.error("Error recalculating prayer times:", error);
+                    });
+                    
+                    // Update DST status display
+                    updateDSTStatus();
+                }
+            });
+        });
+        
+        // Set up custom adjustment dropdown
+        const customAdjustment = document.getElementById('customDstAdjustment');
+        if (customAdjustment) {
+            customAdjustment.value = customDstAdjustment.toString();
+            customAdjustment.disabled = (dstHandlingMode !== 'custom');
+            
+            customAdjustment.addEventListener('change', function() {
+                customDstAdjustment = parseInt(this.value);
+                localStorage.setItem('customDstAdjustment', customDstAdjustment.toString());
+                
+                // Recalculate prayer times with new adjustment
+                calculatePrayerTimes().then(() => {
+                    console.log("Prayer times recalculated with new DST adjustment");
+                }).catch(error => {
+                    console.error("Error recalculating prayer times:", error);
+                });
+            });
+        }
+        
+        // Update DST status display immediately
+        updateDSTStatus();
+        
+        // Schedule regular updates of DST status
+        setInterval(updateDSTStatus, 60000); // Update every minute
+        
+        console.log("DST settings initialized successfully");
+    } catch (error) {
+        console.error("Error initializing DST settings:", error);
+    }
 }
 
-// Update timezone calculation with DST awareness
+// Update DST status display
+function updateDSTStatus() {
+    try {
+        const dstStatusElement = document.getElementById('dstStatus');
+        const timeZoneInfoElement = document.getElementById('timeZoneInfo');
+        
+        if (dstStatusElement && timeZoneInfoElement) {
+            const date = new Date();
+            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
+            const isDST = detectDST(date);
+            
+            // Update time zone info
+            timeZoneInfoElement.textContent = `${timeZone} (UTC${getFormattedTimezoneOffset()})`;
+            
+            // Update DST status based on mode
+            switch (dstHandlingMode) {
+                case 'auto':
+                    dstStatusElement.textContent = isDST ? 
+                        "Active (automatically detected)" : 
+                        "Inactive (automatically detected)";
+                    dstStatusElement.style.color = isDST ? "#4CAF50" : "#F44336";
+                    break;
+                case 'always':
+                    dstStatusElement.textContent = "Always active (manual override)";
+                    dstStatusElement.style.color = "#4CAF50";
+                    break;
+                case 'never':
+                    dstStatusElement.textContent = "Always inactive (manual override)";
+                    dstStatusElement.style.color = "#F44336";
+                    break;
+                case 'custom':
+                    const adjustment = customDstAdjustment;
+                    const sign = adjustment > 0 ? "+" : adjustment < 0 ? "-" : "";
+                    dstStatusElement.textContent = `Custom adjustment: ${sign}${Math.abs(adjustment)} hour(s)`;
+                    dstStatusElement.style.color = adjustment !== 0 ? "#2196F3" : "#F44336";
+                    break;
+                default:
+                    dstStatusElement.textContent = "Unknown DST mode";
+                    dstStatusElement.style.color = "#F44336";
+            }
+        }
+    } catch (error) {
+        console.error("Error updating DST status:", error);
+    }
+}
+
+// Detect if DST is currently in effect
+function detectDST(date) {
+    try {
+        const jan = new Date(date.getFullYear(), 0, 1);
+        const jul = new Date(date.getFullYear(), 6, 1);
+        
+        const stdTimezoneOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+        const currentOffset = date.getTimezoneOffset();
+        
+        return currentOffset < stdTimezoneOffset;
+    } catch (error) {
+        console.error("Error detecting DST:", error);
+        return false;
+    }
+}
+
+// Get formatted timezone offset
+function getFormattedTimezoneOffset() {
+    const offset = -new Date().getTimezoneOffset() / 60;
+    const sign = offset >= 0 ? "+" : "-";
+    const hours = Math.floor(Math.abs(offset));
+    const minutes = Math.abs(offset % 1) * 60;
+    
+    return `${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
+// Enhanced DST detection with user preferences
+function getDSTAdjustment(date) {
+    switch (dstHandlingMode) {
+        case 'auto':
+            // Original automatic detection
+            const januaryDate = new Date(date.getFullYear(), 0, 1);
+            const currentDate = new Date(date);
+            
+            const januaryOffset = januaryDate.getTimezoneOffset();
+            const currentOffset = currentDate.getTimezoneOffset();
+            
+            const isDST = currentOffset < januaryOffset;
+            return isDST ? (januaryOffset - currentOffset) / 60 : 0;
+            
+        case 'always':
+            // Always use DST (typically +1 hour)
+            return 1;
+            
+        case 'never':
+            // Never use DST
+            return 0;
+            
+        case 'custom':
+            // Use custom adjustment
+            return customDstAdjustment;
+            
+        default:
+            console.warn(`Unknown DST handling mode: ${dstHandlingMode}, defaulting to auto`);
+            return getDSTAdjustment(date); // Recursive call with default mode
+    }
+}
+
+// Update timezone calculation with enhanced DST awareness
 function getTimezoneWithDST(date) {
     const standardTimezoneOffset = -new Date().getTimezoneOffset() / 60;
     const dstAdjustment = getDSTAdjustment(date);
     
-    console.log(`Timezone calculation: Standard offset: ${standardTimezoneOffset}, DST adjustment: ${dstAdjustment}`);
+    console.log(`Timezone calculation: Standard offset: ${standardTimezoneOffset}, DST adjustment: ${dstAdjustment}, Mode: ${dstHandlingMode}`);
     
-    return standardTimezoneOffset;
+    // For 'auto' mode, the standard offset already includes DST if applicable
+    // For other modes, we need to adjust based on the selected mode
+    if (dstHandlingMode === 'auto') {
+        return standardTimezoneOffset;
+    } else {
+        // Get the base timezone without DST
+        const baseTimezone = standardTimezoneOffset - (getDSTAdjustment(new Date()) * (dstHandlingMode === 'auto' ? 1 : 0));
+        return baseTimezone + dstAdjustment;
+    }
 }
 
 // Update the prayer time calculation functions
@@ -1200,11 +1370,23 @@ async function handleMadhabChange(madhab) {
             madhabInput.checked = true;
         }
 
+        // Ensure we have coordinates before calculating
+        if (!latitude || !longitude) {
+            await getLocation();
+        }
+
         // Clear current times
         currentPrayerTimes = null;
 
-        // Force recalculation
-        const times = await calculatePrayerTimes();
+        // Try local calculation first
+        let times = null;
+        try {
+            times = await calculatePrayerTimes();
+        } catch (calcError) {
+            console.warn('Local calculation failed:', calcError);
+            // Try API fallback
+            times = await fallbackToAPI();
+        }
         
         if (!times) {
             throw new Error('Failed to calculate new prayer times');
@@ -1215,6 +1397,8 @@ async function handleMadhabChange(madhab) {
 
     } catch (error) {
         console.error('Error updating madhab:', error);
+        // Show error to user but don't throw
+        showError(`Error updating madhab: ${error.message}. Falling back to API...`);
         // Try API fallback
         return await fallbackToAPI();
     }

@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Azan Times & Islamic Calendar</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="icons/prayer.png">
+    <link rel="shortcut icon" type="image/png" href="icons/prayer.png">
     <!-- Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- Google Fonts -->
@@ -394,6 +397,31 @@
             border-radius: 4px;
             border: 1px solid #fcc;
         }
+
+        .dst-settings {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .dst-info {
+            margin-bottom: 20px;
+        }
+
+        .dst-options {
+            margin-bottom: 20px;
+        }
+
+        .dst-option {
+            margin-bottom: 10px;
+        }
+
+        .dst-explanation {
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -429,6 +457,51 @@
                         <input type="radio" name="madhab" value="Hanafi"> Hanafi
                     </label>
                 </div>
+            </div>
+        </div>
+
+        <!-- DST Settings Section -->
+        <div class="dst-settings">
+            <h2><span class="material-icons">access_time</span> Daylight Saving Time Settings</h2>
+            <div class="dst-info">
+                <p>Current status: <span id="dstStatus">Detecting...</span></p>
+                <p>Time zone: <span id="timeZoneInfo">Detecting...</span></p>
+            </div>
+            <div class="dst-options">
+                <div class="dst-option">
+                    <label>
+                        <input type="radio" name="dstHandling" value="auto" checked> 
+                        Automatic (Use system settings)
+                    </label>
+                </div>
+                <div class="dst-option">
+                    <label>
+                        <input type="radio" name="dstHandling" value="always"> 
+                        Always use DST
+                    </label>
+                </div>
+                <div class="dst-option">
+                    <label>
+                        <input type="radio" name="dstHandling" value="never"> 
+                        Never use DST
+                    </label>
+                </div>
+                <div class="dst-option">
+                    <label>
+                        <input type="radio" name="dstHandling" value="custom"> 
+                        Custom adjustment:
+                    </label>
+                    <select id="customDstAdjustment" disabled>
+                        <option value="-2">-2 hours</option>
+                        <option value="-1">-1 hour</option>
+                        <option value="0" selected>No adjustment</option>
+                        <option value="1">+1 hour</option>
+                        <option value="2">+2 hours</option>
+                    </select>
+                </div>
+            </div>
+            <div class="dst-explanation">
+                <p>Daylight Saving Time can affect prayer calculations. Choose how you want to handle DST adjustments.</p>
             </div>
         </div>
 
