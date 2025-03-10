@@ -17,6 +17,56 @@ const localAdhans = {
             isha: 'audio/adhans/abdul-basit/normal.mp3'
         }
     },
+    'assabile-abdul-basit': {
+        name: 'Assabile - Abdul Basit',
+        files: {
+            fajr: 'audio/adhans/assabile/abdul_basit_adhan.mp3',
+            dhuhr: 'audio/adhans/assabile/abdul_basit_adhan.mp3',
+            asr: 'audio/adhans/assabile/abdul_basit_adhan.mp3',
+            maghrib: 'audio/adhans/assabile/abdul_basit_adhan.mp3',
+            isha: 'audio/adhans/assabile/abdul_basit_adhan.mp3'
+        }
+    },
+    'assabile-mishary': {
+        name: 'Assabile - Mishary Rashid',
+        files: {
+            fajr: 'audio/adhans/assabile/mishary_adhan.mp3',
+            dhuhr: 'audio/adhans/assabile/mishary_adhan.mp3',
+            asr: 'audio/adhans/assabile/mishary_adhan.mp3',
+            maghrib: 'audio/adhans/assabile/mishary_adhan.mp3',
+            isha: 'audio/adhans/assabile/mishary_adhan.mp3'
+        }
+    },
+    'assabile-fajr': {
+        name: 'Assabile - Fajr Special',
+        files: {
+            fajr: 'audio/adhans/assabile/fajr_adhan.mp3',
+            dhuhr: 'audio/adhans/assabile/mishary_adhan.mp3',
+            asr: 'audio/adhans/assabile/mishary_adhan.mp3',
+            maghrib: 'audio/adhans/assabile/mishary_adhan.mp3',
+            isha: 'audio/adhans/assabile/mishary_adhan.mp3'
+        }
+    },
+    'assabile-madina': {
+        name: 'Assabile - Madina',
+        files: {
+            fajr: 'audio/adhans/assabile/madina_adhan.mp3',
+            dhuhr: 'audio/adhans/assabile/madina_adhan.mp3',
+            asr: 'audio/adhans/assabile/madina_adhan.mp3',
+            maghrib: 'audio/adhans/assabile/madina_adhan.mp3',
+            isha: 'audio/adhans/assabile/madina_adhan.mp3'
+        }
+    },
+    'assabile-makkah': {
+        name: 'Assabile - Makkah',
+        files: {
+            fajr: 'audio/adhans/assabile/makkah_adhan.mp3',
+            dhuhr: 'audio/adhans/assabile/makkah_adhan.mp3',
+            asr: 'audio/adhans/assabile/makkah_adhan.mp3',
+            maghrib: 'audio/adhans/assabile/makkah_adhan.mp3',
+            isha: 'audio/adhans/assabile/makkah_adhan.mp3'
+        }
+    },
     'al-ghamdi': {
         name: 'Al-Ghamdi',
         files: {
