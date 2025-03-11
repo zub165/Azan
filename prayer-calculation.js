@@ -21,6 +21,85 @@ async function verifyAdhan() {
     });
 }
 
+// Get user's location
+async function getLocation() {
+    return new Promise((resolve, reject) => {
+        console.log("Getting user location...");
+        
+        // Check if we already have coordinates
+        if (window.latitude && window.longitude) {
+            console.log(`Using existing coordinates: ${window.latitude}, ${window.longitude}`);
+            resolve({ latitude: window.latitude, longitude: window.longitude });
+            return;
+        }
+        
+        // Check if there's a global getLocation function
+        if (typeof window.getLocation === 'function') {
+            console.log("Using global getLocation function");
+            
+            // Override the showPosition function temporarily
+            const originalShowPosition = window.showPosition;
+            window.showPosition = function(position) {
+                // Call the original function
+                if (originalShowPosition) originalShowPosition(position);
+                
+                // Store coordinates globally
+                window.latitude = position.coords.latitude;
+                window.longitude = position.coords.longitude;
+                
+                // Resolve the promise
+                resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+                
+                // Restore original function
+                window.showPosition = originalShowPosition;
+            };
+            
+            // Call the global getLocation function
+            window.getLocation();
+            
+            // Set a timeout in case getLocation fails
+            setTimeout(() => {
+                // Use default coordinates if getLocation fails
+                console.warn("Location request timed out, using default coordinates (Makkah)");
+                window.latitude = 21.4225;  // Makkah coordinates as default
+                window.longitude = 39.8262;
+                resolve({ latitude: window.latitude, longitude: window.longitude });
+            }, 10000);
+            
+            return;
+        }
+        
+        // If no global getLocation, use the Geolocation API directly
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    window.latitude = position.coords.latitude;
+                    window.longitude = position.coords.longitude;
+                    console.log(`Got coordinates: ${window.latitude}, ${window.longitude}`);
+                    resolve({ latitude: window.latitude, longitude: window.longitude });
+                },
+                (error) => {
+                    console.warn("Geolocation error:", error);
+                    // Use default coordinates
+                    window.latitude = 21.4225;  // Makkah coordinates as default
+                    window.longitude = 39.8262;
+                    resolve({ latitude: window.latitude, longitude: window.longitude });
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        } else {
+            console.warn("Geolocation not supported, using default coordinates (Makkah)");
+            window.latitude = 21.4225;  // Makkah coordinates as default
+            window.longitude = 39.8262;
+            resolve({ latitude: window.latitude, longitude: window.longitude });
+        }
+    });
+}
+
 // Ensure Adhan.js is Fully Loaded Before Running Calculations
 async function initializePrayerCalculations() {
     try {
@@ -98,14 +177,14 @@ async function tryAladhanAPI() {
             method: method,
             school: school,
             madhab: currentMadhab,
-            latitude: latitude,
-            longitude: longitude
+            latitude: window.latitude,
+            longitude: window.longitude
         });
 
         const apiUrl = `https://api.aladhan.com/v1/timings/${date}`;
         const params = new URLSearchParams({
-            latitude: latitude.toString(),
-            longitude: longitude.toString(),
+            latitude: window.latitude.toString(),
+            longitude: window.longitude.toString(),
             method: method.toString(),
             school: school.toString(),
             adjustment: '1',
@@ -158,8 +237,8 @@ async function tryPrayTimesAPI() {
         const date = new Date();
         const apiUrl = 'https://api.pray.zone/v2/times/today.json';
         const params = new URLSearchParams({
-            latitude: latitude.toString(),
-            longitude: longitude.toString(),
+            latitude: window.latitude.toString(),
+            longitude: window.longitude.toString(),
             elevation: '0',
             school: currentMadhab.toLowerCase(),
             method: getPrayTimesMethod(currentCalculationMethod)
@@ -359,7 +438,7 @@ function validatePrayerTimes(times) {
     }
 
     // High latitude specific validations
-    if (Math.abs(latitude) >= 45) {
+    if (Math.abs(window.latitude) >= 45) {
         const fajrDhuhr = moment.duration(times.dhuhr.diff(times.fajr)).asHours();
         const dhuhrMaghrib = moment.duration(times.maghrib.diff(times.dhuhr)).asHours();
         const maghribIsha = moment.duration(times.isha.diff(times.maghrib)).asHours();
@@ -392,9 +471,9 @@ function validatePrayerTimes(times) {
 
 // High Latitude Adjustments
 function getHighLatitudeRule() {
-    if (!latitude) return null;
+    if (!window.latitude) return null;
 
-    const lat = Math.abs(latitude);
+    const lat = Math.abs(window.latitude);
     if (lat >= 65) return Adhan.HighLatitudeRule.SeventhOfTheNight;
     if (lat >= 55) return Adhan.HighLatitudeRule.TwilightAngle;
     if (lat >= 45) return Adhan.HighLatitudeRule.MiddleOfTheNight;
@@ -459,53 +538,27 @@ window.onload = async function () {
 // Update the main prayer calculation function to handle DST transitions
 async function calculatePrayerTimes(retryCount = 3) {
     try {
-        if (!latitude || !longitude) {
+        if (!window.latitude || !window.longitude) {
             console.error('Location coordinates not available, requesting location...');
             
             // Try to get location again
-            if (typeof getLocation === 'function') {
-                await new Promise(resolve => {
-                    // Override the showPosition function temporarily to resolve the promise
-                    const originalShowPosition = window.showPosition;
-                    window.showPosition = function(position) {
-                        // Call the original function
-                        if (originalShowPosition) originalShowPosition(position);
-                        // Resolve the promise
-                        resolve();
-                    };
-                    
-                    // Call getLocation
-                    getLocation();
-                    
-                    // Set a timeout in case getLocation fails
-                    setTimeout(() => {
-                        // Restore original function
-                        window.showPosition = originalShowPosition;
-                        
-                        // If still no coordinates, use default
-                        if (!latitude || !longitude) {
-                            console.warn('Using default coordinates (Makkah)');
-                            latitude = 21.4225;  // Makkah coordinates as default
-                            longitude = 39.8262;
-                        }
-                        resolve();
-                    }, 5000);
-                });
-            } else {
-                // If getLocation is not available, use default coordinates
-                console.warn('getLocation function not available, using default coordinates (Makkah)');
-                latitude = 21.4225;  // Makkah coordinates as default
-                longitude = 39.8262;
+            try {
+                await getLocation();
+            } catch (error) {
+                console.error("Error getting location:", error);
+                // Use default coordinates
+                window.latitude = 21.4225;  // Makkah coordinates as default
+                window.longitude = 39.8262;
             }
             
             // Check again after attempting to get location
-            if (!latitude || !longitude) {
+            if (!window.latitude || !window.longitude) {
                 throw new Error('Location coordinates still not available after retry');
             }
         }
 
         // Create coordinates object
-        const coordinates = new Adhan.Coordinates(latitude, longitude);
+        const coordinates = new Adhan.Coordinates(window.latitude, window.longitude);
         const date = new Date();
         
         // Check for DST transition
@@ -518,7 +571,7 @@ async function calculatePrayerTimes(retryCount = 3) {
         const params = getCalculationParameters();
 
         // Handle high latitude adjustments
-        if (Math.abs(latitude) >= 45) {
+        if (Math.abs(window.latitude) >= 45) {
             params.highLatitudeRule = getHighLatitudeRule();
             console.log(`Using high latitude rule: ${params.highLatitudeRule}`);
         }
@@ -867,7 +920,7 @@ function getTimezoneWithDST(date) {
 function calculateDhuhr(date, eqt) {
     // Dhuhr time calculation using provided formula with DST awareness
     const timezone = getTimezoneWithDST(date);
-    const dhuhrTime = 12 + eqt/60 - longitude/15 + timezone;
+    const dhuhrTime = 12 + eqt/60 - window.longitude/15 + timezone;
     
     return moment(date)
         .hours(Math.floor(dhuhrTime))
@@ -880,10 +933,10 @@ function calculateTimeByAngle(date, angle, isBefore, decl, eqt) {
         const timezone = getTimezoneWithDST(date);
         
         // Calculate hour angle
-        const H = calculatePrayerTime(angle, decl, latitude);
+        const H = calculatePrayerTime(angle, decl, window.latitude);
         
         // Convert to local time
-        let time = 12 + (isBefore ? -H : H) + eqt/60 - longitude/15 + timezone;
+        let time = 12 + (isBefore ? -H : H) + eqt/60 - window.longitude/15 + timezone;
         
         // Normalize time to 0-24 range
         time = (time + 24) % 24;
@@ -1202,7 +1255,6 @@ function getApiMethodNumber(method) {
 }
 
 // Global variables
-let latitude, longitude;
 let currentPrayerTimes;
 let currentCalculationMethod = localStorage.getItem('calculationMethod') || 'MuslimWorldLeague';
 let currentMadhab = localStorage.getItem('madhab') || 'Shafi';
@@ -1224,7 +1276,7 @@ function calculateAsr(date, decl, eqt) {
     console.log(`Calculating Asr with ${currentMadhab} madhab (shadow length: ${shadowLength})`);
     
     // Calculate Asr time
-    const angle = Math.atan(1/(shadowLength + Math.tan(Math.abs(latitude - decl))));
+    const angle = Math.atan(1/(shadowLength + Math.tan(Math.abs(window.latitude - decl))));
     const H = angle * (180/Math.PI) / 15;
     
     return calculateTimeByAngle(date, H, false, decl, eqt);

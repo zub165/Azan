@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Azan Times & Islamic Calendar</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="icons/prayer.png">
-    <link rel="shortcut icon" type="image/png" href="icons/prayer.png">
     <!-- Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- Google Fonts -->
@@ -645,61 +642,187 @@
     <!-- 1. Third-party dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     
-    <!-- 2. Load Adhan.js with fallback -->
+    <!-- 2. Load Adhan.js with enhanced fallback -->
     <script>
-        // Load Adhan.js with fallback
-        function loadAdhan() {
-            return new Promise((resolve, reject) => {
-                const cdnScript = document.createElement('script');
-                cdnScript.src = 'https://cdn.jsdelivr.net/npm/adhan@4.4.3/dist/adhan.min.js';
-                cdnScript.onerror = () => {
-                    console.warn('CDN Adhan.js failed, trying local version...');
+        // Enhanced Adhan.js loading with better error handling
+        (function() {
+            // Track loading state
+            window.adhanLoading = {
+                status: 'pending',
+                attempts: 0,
+                maxAttempts: 3,
+                error: null
+            };
+            
+            // Load Adhan.js with robust fallback
+            function loadAdhan() {
+                return new Promise((resolve, reject) => {
+                    console.log("Attempting to load Adhan.js from CDN...");
+                    window.adhanLoading.status = 'loading';
+                    
+                    // Try CDN first
+                    const cdnScript = document.createElement('script');
+                    cdnScript.src = 'https://cdn.jsdelivr.net/npm/adhan@4.4.3/dist/adhan.min.js';
+                    cdnScript.async = true;
+                    
+                    cdnScript.onload = () => {
+                        if (typeof Adhan !== 'undefined') {
+                            console.log("✓ Adhan.js loaded successfully from CDN");
+                            window.adhanLoading.status = 'loaded';
+                            resolve('cdn');
+                        } else {
+                            console.warn("CDN script loaded but Adhan is undefined");
+                            loadLocalAdhan().then(resolve).catch(reject);
+                        }
+                    };
+                    
+                    cdnScript.onerror = () => {
+                        console.warn("× CDN Adhan.js failed, trying local version...");
+                        loadLocalAdhan().then(resolve).catch(reject);
+                    };
+                    
+                    document.body.appendChild(cdnScript);
+                });
+            }
+            
+            // Load local version as fallback
+            function loadLocalAdhan() {
+                return new Promise((resolve, reject) => {
+                    console.log("Attempting to load local Adhan.js...");
+                    
                     const localScript = document.createElement('script');
                     localScript.src = 'js/adhan.js';
+                    localScript.async = true;
+                    
+                    localScript.onload = () => {
+                        if (typeof Adhan !== 'undefined') {
+                            console.log("✓ Adhan.js loaded successfully from local file");
+                            window.adhanLoading.status = 'loaded';
+                            resolve('local');
+                        } else {
+                            const error = new Error('Local Adhan.js loaded but Adhan is undefined');
+                            console.error(error);
+                            window.adhanLoading.status = 'failed';
+                            window.adhanLoading.error = error;
+                            reject(error);
+                        }
+                    };
+                    
                     localScript.onerror = () => {
                         const error = new Error('Failed to load Adhan.js from both CDN and local sources');
                         console.error(error);
+                        window.adhanLoading.status = 'failed';
+                        window.adhanLoading.error = error;
                         reject(error);
                     };
-                    localScript.onload = resolve;
+                    
                     document.body.appendChild(localScript);
-                };
-                cdnScript.onload = resolve;
-                document.body.appendChild(cdnScript);
+                });
+            }
+            
+            // Verify Adhan is available
+            function verifyAdhan(maxWaitTime = 5000) {
+                return new Promise((resolve, reject) => {
+                    // If already loaded, resolve immediately
+                    if (typeof Adhan !== 'undefined') {
+                        window.adhanLoading.status = 'loaded';
+                        resolve(true);
+                        return;
+                    }
+                    
+                    // If failed, reject immediately
+                    if (window.adhanLoading.status === 'failed') {
+                        reject(window.adhanLoading.error || new Error('Adhan loading failed'));
+                        return;
+                    }
+                    
+                    // Set timeout for max wait time
+                    const timeout = setTimeout(() => {
+                        if (typeof Adhan === 'undefined') {
+                            const error = new Error(`Adhan not available after ${maxWaitTime}ms`);
+                            window.adhanLoading.status = 'failed';
+                            window.adhanLoading.error = error;
+                            reject(error);
+                        }
+                    }, maxWaitTime);
+                    
+                    // Check periodically
+                    const interval = setInterval(() => {
+                        if (typeof Adhan !== 'undefined') {
+                            clearInterval(interval);
+                            clearTimeout(timeout);
+                            window.adhanLoading.status = 'loaded';
+                            resolve(true);
+                        } else if (window.adhanLoading.status === 'failed') {
+                            clearInterval(interval);
+                            clearTimeout(timeout);
+                            reject(window.adhanLoading.error || new Error('Adhan loading failed'));
+                        }
+                    }, 100);
+                });
+            }
+            
+            // Start loading immediately
+            loadAdhan().catch(error => {
+                console.error('Error loading Adhan.js:', error);
+                showAdhanError(error);
             });
-        }
-
-        // Load Adhan.js immediately
-        loadAdhan().catch(error => {
-            console.error('Error loading Adhan.js:', error);
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.innerHTML = `
-                Failed to load prayer calculation library. 
-                <br>
-                Please check your internet connection and refresh the page.
-                <br>
-                <small>Error: ${error.message}</small>
-                <button onclick="this.parentElement.remove()" style="
-                    position: absolute;
-                    top: 0.5rem;
-                    right: 0.5rem;
-                    background: none;
-                    border: none;
-                    color: #c00;
-                    font-size: 1.5rem;
-                    cursor: pointer;
-                    padding: 0 0.5rem;
-                ">×</button>
-            `;
-            document.body.insertBefore(errorDiv, document.body.firstChild);
-        });
+            
+            // Display error message
+            function showAdhanError(error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.innerHTML = `
+                    <div style="position: relative; padding: 20px;">
+                        <h3 style="margin-top: 0; color: #d32f2f;">Prayer Calculation Error</h3>
+                        <p>Failed to load prayer calculation library.</p>
+                        <p><small>${error.message}</small></p>
+                        <button id="retryAdhanBtn" style="
+                            background: #d32f2f;
+                            color: white;
+                            border: none;
+                            padding: 8px 16px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            margin-top: 10px;
+                        ">Retry</button>
+                        <button onclick="this.parentElement.parentElement.remove()" style="
+                            position: absolute;
+                            top: 10px;
+                            right: 10px;
+                            background: none;
+                            border: none;
+                            color: #d32f2f;
+                            font-size: 20px;
+                            cursor: pointer;
+                            padding: 0;
+                        ">×</button>
+                    </div>
+                `;
+                
+                document.body.insertBefore(errorDiv, document.body.firstChild);
+                
+                // Add retry functionality
+                document.getElementById('retryAdhanBtn').addEventListener('click', function() {
+                    errorDiv.remove();
+                    window.adhanLoading.status = 'pending';
+                    window.adhanLoading.attempts = 0;
+                    loadAdhan().catch(showAdhanError);
+                });
+            }
+            
+            // Expose functions globally
+            window.adhanLoader = {
+                load: loadAdhan,
+                verify: verifyAdhan
+            };
+        })();
     </script>
 
-    <!-- 3. Application scripts -->
-    <script src="js/adhan-init.js"></script>
+    <!-- 3. Application scripts - Load in correct order -->
     <script src="azan.js"></script>
     <script src="prayer-calculation.js"></script>
+    <script src="js/adhan-init.js"></script>
 
     <script>
         const calculationMethodInfo = {
@@ -766,15 +889,23 @@
             madhabInputs.forEach(input => {
                 input.addEventListener('change', async (e) => {
                     if (e.target.checked) {
-                        localStorage.setItem('madhab', e.target.value);
-                        currentMadhab = e.target.value;
                         try {
-                            await calculatePrayerTimes();
-                            console.log(`Prayer times updated using ${e.target.value} madhab`);
+                            // Use the enhanced handler function
+                            const selectedMadhab = e.target.value;
+                            const success = await handleMadhabChange(selectedMadhab);
+                            
+                            if (success) {
+                                console.log(`Prayer times updated using ${selectedMadhab} madhab`);
+                            } else {
+                                console.warn(`Madhab update to ${selectedMadhab} used fallback method`);
+                            }
                         } catch (error) {
-                            console.error('Error updating prayer times:', error);
-                            alert('Error calculating prayer times. Falling back to API.');
-                            await fallbackToAPI();
+                            console.error('Error in madhab change handler:', error);
+                            // Prevent UI from being stuck in a bad state
+                            const savedMadhab = localStorage.getItem('madhab') || 'Shafi';
+                            madhabInputs.forEach(radio => {
+                                radio.checked = (radio.value === savedMadhab);
+                            });
                         }
                     }
                 });
@@ -1353,7 +1484,7 @@
         });
 
         // Initialize Qari selector with verified Qaris
-        function initializeQariSelector() {
+        function initializeLocalQariSelectors() {
             const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
             const localAdhans = [
                 { id: 'local-makkah', name: 'Makkah Adhan' },
@@ -1558,7 +1689,7 @@
         // Initialize
         getLocation();
         initializeCalculationMethod();
-        initializeQariSelector();
+        initializeLocalQariSelectors();
         setInterval(updateCurrentTime, 1000);
         setInterval(getMoonPhase, 60000);
         setInterval(getIslamicDate, 60000);
