@@ -4,6 +4,8 @@ let currentAudio = null;
 
 // Cache for verified audio files
 const verifiedAudioFiles = new Map();
+const downloadedAudioFiles = new Map();
+const pendingDownloads = new Map();
 
 // Define local Adhan configurations
 const localAdhans = {
@@ -382,83 +384,12 @@ const localAdhans = {
 // Azan Player Object
 class AzanPlayer {
     constructor() {
-        // Initialize audio context
-        this.audioContext = null;
+        this.audio = new Audio();
         this.currentPrayer = null;
         this.availablePrayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-        this.audio = new Audio();
-        this.verifiedAudioFiles = new Map();
-        
-        // Initialize audio files
-        this.audioFiles = {
-            'islamcan-19': {
-                fajr: 'audio/islamcan/19/fajr.mp3',
-                dhuhr: 'audio/islamcan/19/dhuhr.mp3',
-                asr: 'audio/islamcan/19/asr.mp3',
-                maghrib: 'audio/islamcan/19/maghrib.mp3',
-                isha: 'audio/islamcan/19/isha.mp3'
-            },
-            'islamcan-20': {
-                fajr: 'audio/islamcan/20/fajr.mp3',
-                dhuhr: 'audio/islamcan/20/dhuhr.mp3',
-                asr: 'audio/islamcan/20/asr.mp3',
-                maghrib: 'audio/islamcan/20/maghrib.mp3',
-                isha: 'audio/islamcan/20/isha.mp3'
-            },
-            'islamcan-21': {
-                fajr: 'audio/islamcan/21/fajr.mp3',
-                dhuhr: 'audio/islamcan/21/dhuhr.mp3',
-                asr: 'audio/islamcan/21/asr.mp3',
-                maghrib: 'audio/islamcan/21/maghrib.mp3',
-                isha: 'audio/islamcan/21/isha.mp3'
-            },
-            'beep': {
-                fajr: 'audio/beep.mp3',
-                dhuhr: 'audio/beep.mp3',
-                asr: 'audio/beep.mp3',
-                maghrib: 'audio/beep.mp3',
-                isha: 'audio/beep.mp3'
-            },
-            // Assabile audio files
-            'assabile-madina': {
-                fajr: 'audio/assabile/madina_adhan.mp3',
-                dhuhr: 'audio/assabile/madina_adhan.mp3',
-                asr: 'audio/assabile/madina_adhan.mp3',
-                maghrib: 'audio/assabile/madina_adhan.mp3',
-                isha: 'audio/assabile/madina_adhan.mp3'
-            },
-            'assabile-makkah': {
-                fajr: 'audio/assabile/makkah_adhan.mp3',
-                dhuhr: 'audio/assabile/makkah_adhan.mp3',
-                asr: 'audio/assabile/makkah_adhan.mp3',
-                maghrib: 'audio/assabile/makkah_adhan.mp3',
-                isha: 'audio/assabile/makkah_adhan.mp3'
-            },
-            'assabile-mishary': {
-                fajr: 'audio/assabile/mishary_adhan.mp3',
-                dhuhr: 'audio/assabile/mishary_adhan.mp3',
-                asr: 'audio/assabile/mishary_adhan.mp3',
-                maghrib: 'audio/assabile/mishary_adhan.mp3',
-                isha: 'audio/assabile/mishary_adhan.mp3'
-            },
-            'assabile-abdul-basit': {
-                fajr: 'audio/assabile/abdul_basit_adhan.mp3',
-                dhuhr: 'audio/assabile/abdul_basit_adhan.mp3',
-                asr: 'audio/assabile/abdul_basit_adhan.mp3',
-                maghrib: 'audio/assabile/abdul_basit_adhan.mp3',
-                isha: 'audio/assabile/abdul_basit_adhan.mp3'
-            },
-            'assabile-fajr-special': {
-                fajr: 'audio/assabile/fajr_adhan.mp3',
-                dhuhr: 'audio/assabile/mishary_adhan.mp3',
-                asr: 'audio/assabile/mishary_adhan.mp3',
-                maghrib: 'audio/assabile/mishary_adhan.mp3',
-                isha: 'audio/assabile/mishary_adhan.mp3'
-            }
-        };
         
         // Initialize audio context
-        this.initAudioContext();
+        this.initializeAudioContext();
     }
 
     async initAudioContext() {
@@ -469,45 +400,50 @@ class AzanPlayer {
     }
 
     async verifyAudioFile(filePath) {
-        try {
-            // Check if we've already verified this file
-            if (this.verifiedAudioFiles.has(filePath)) {
-                return this.verifiedAudioFiles.get(filePath);
-            }
+        // Check cache first
+        if (verifiedAudioFiles.has(filePath)) {
+            return verifiedAudioFiles.get(filePath);
+        }
 
-            console.log(`Verifying audio file: ${filePath}`);
+        try {
+            // Check if this is a data URL (downloaded file)
+            if (filePath.startsWith('data:audio/')) {
+                console.log(`Verified data URL audio`);
+                verifiedAudioFiles.set(filePath, true);
+                return true;
+            }
             
             // Encode the file path
             const encodedPath = encodeURI(filePath);
             
+            // Try HEAD request first
             try {
-                // Try a HEAD request first (more efficient)
+                console.log(`Verifying audio file: ${encodedPath}`);
                 const response = await fetch(encodedPath, { method: 'HEAD' });
-                const exists = response.ok;
                 
-                console.log(`File ${filePath} exists: ${exists}`);
-                this.verifiedAudioFiles.set(filePath, exists);
-                return exists;
-            } catch (headError) {
-                console.warn(`HEAD request failed for ${filePath}, trying GET: ${headError}`);
-                
-                // If HEAD fails, try a GET request as fallback
-                try {
-                    const response = await fetch(encodedPath);
-                    const exists = response.ok;
-                    
-                    console.log(`File ${filePath} exists (via GET): ${exists}`);
-                    this.verifiedAudioFiles.set(filePath, exists);
-                    return exists;
-                } catch (getError) {
-                    console.error(`GET request also failed for ${filePath}: ${getError}`);
-                    this.verifiedAudioFiles.set(filePath, false);
-                    return false;
+                if (response.ok) {
+                    console.log(`Audio file verified: ${encodedPath}`);
+                    verifiedAudioFiles.set(filePath, true);
+                    return true;
                 }
+            } catch (headError) {
+                console.warn(`HEAD request failed for ${encodedPath}, trying GET request`);
             }
+            
+            // Fallback to GET request
+            const response = await fetch(encodedPath);
+            if (response.ok) {
+                console.log(`Audio file verified via GET: ${encodedPath}`);
+                verifiedAudioFiles.set(filePath, true);
+                return true;
+            }
+            
+            console.warn(`Audio file not found: ${encodedPath}`);
+            verifiedAudioFiles.set(filePath, false);
+            return false;
         } catch (error) {
             console.error(`Error verifying audio file ${filePath}:`, error);
-            this.verifiedAudioFiles.set(filePath, false);
+            verifiedAudioFiles.set(filePath, false);
             return false;
         }
     }
@@ -581,6 +517,7 @@ class AzanPlayer {
         
         console.log("Scanning for available Adhan audio files...");
         
+        // First scan predefined Adhans
         for (const [qariId, qari] of Object.entries(localAdhans)) {
             let allFilesAvailable = true;
             const availableFiles = {};
@@ -608,7 +545,159 @@ class AzanPlayer {
             }
         }
         
+        // Now scan the audio/adhans directory for additional Adhans
+        await this.scanAdhanDirectory(availableQaris);
+        
         return availableQaris;
+    }
+    
+    async scanAdhanDirectory(availableQaris) {
+        console.log("Scanning audio/adhans directory for additional Adhan files...");
+        
+        try {
+            // Define the base directory
+            const baseDir = 'audio/adhans';
+            
+            // Scan subdirectories
+            const subdirs = ['assabile', 'Local', 'islamcan'];
+            const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+            
+            for (const subdir of subdirs) {
+                // Try to list files in this directory
+                try {
+                    // For each subdirectory, look for MP3 files
+                    const dirPath = `${baseDir}/${subdir}`;
+                    
+                    // Different handling based on directory structure
+                    if (subdir === 'assabile') {
+                        // Assabile directory has specific named files
+                        const files = [
+                            'abdul_basit_adhan.mp3',
+                            'mishary_adhan.mp3',
+                            'fajr_adhan.mp3',
+                            'madina_adhan.mp3',
+                            'makkah_adhan.mp3'
+                        ];
+                        
+                        // Check if files exist
+                        for (const file of files) {
+                            const filePath = `${dirPath}/${file}`;
+                            const exists = await this.verifyAudioFile(filePath);
+                            
+                            if (exists) {
+                                // Create a qari ID based on the filename
+                                const baseName = file.replace('_adhan.mp3', '');
+                                const qariId = `${subdir}-${baseName}`;
+                                const qariName = `${subdir.charAt(0).toUpperCase() + subdir.slice(1)} - ${baseName.charAt(0).toUpperCase() + baseName.slice(1).replace(/_/g, ' ')}`;
+                                
+                                // Create files object for all prayers
+                                const filesObj = {};
+                                for (const prayer of prayers) {
+                                    // For fajr_adhan.mp3, use it only for fajr prayer
+                                    if (file === 'fajr_adhan.mp3') {
+                                        if (prayer === 'fajr') {
+                                            filesObj[prayer] = filePath;
+                                        } else {
+                                            // For other prayers, use mishary_adhan.mp3 as fallback
+                                            filesObj[prayer] = `${dirPath}/mishary_adhan.mp3`;
+                                        }
+                                    } else {
+                                        filesObj[prayer] = filePath;
+                                    }
+                                }
+                                
+                                // Add to available qaris
+                                availableQaris.set(qariId, {
+                                    name: qariName,
+                                    files: filesObj
+                                });
+                                console.log(`Added ${qariName} from ${subdir} directory`);
+                            }
+                        }
+                    } else if (subdir === 'Local') {
+                        // Local directory has specific named files
+                        const files = [
+                            'default-azan.mp3',
+                            'default-azanfajr.mp3',
+                            'azan.mp3',
+                            'azan2.mp3',
+                            'adhan.mp3'
+                        ];
+                        
+                        // Check if files exist
+                        for (const file of files) {
+                            const filePath = `${dirPath}/${file}`;
+                            const exists = await this.verifyAudioFile(filePath);
+                            
+                            if (exists) {
+                                // Create a qari ID based on the filename
+                                const baseName = file.replace('.mp3', '');
+                                const qariId = `${subdir}-${baseName}`;
+                                const qariName = `${subdir} - ${baseName.charAt(0).toUpperCase() + baseName.slice(1)}`;
+                                
+                                // Create files object for all prayers
+                                const filesObj = {};
+                                for (const prayer of prayers) {
+                                    // For default-azanfajr.mp3, use it only for fajr prayer
+                                    if (file === 'default-azanfajr.mp3') {
+                                        if (prayer === 'fajr') {
+                                            filesObj[prayer] = filePath;
+                                        } else {
+                                            // For other prayers, use default-azan.mp3 as fallback
+                                            filesObj[prayer] = `${dirPath}/default-azan.mp3`;
+                                        }
+                                    } else {
+                                        filesObj[prayer] = filePath;
+                                    }
+                                }
+                                
+                                // Add to available qaris
+                                availableQaris.set(qariId, {
+                                    name: qariName,
+                                    files: filesObj
+                                });
+                                console.log(`Added ${qariName} from ${subdir} directory`);
+                            }
+                        }
+                    } else if (subdir === 'islamcan') {
+                        // Islamcan directory has numbered files
+                        // Group files by prefix (e.g., azan1, azan2, etc.)
+                        const fileGroups = {};
+                        
+                        // Check for azan files from 1 to 21
+                        for (let i = 1; i <= 21; i++) {
+                            const filePath = `${dirPath}/azan${i}.mp3`;
+                            const exists = await this.verifyAudioFile(filePath);
+                            
+                            if (exists) {
+                                // Create a qari ID based on the filename
+                                const qariId = `${subdir}-${i}`;
+                                const qariName = `${subdir.charAt(0).toUpperCase() + subdir.slice(1)} - Qari ${i}`;
+                                
+                                // Create files object for all prayers
+                                const filesObj = {};
+                                for (const prayer of prayers) {
+                                    filesObj[prayer] = filePath;
+                                }
+                                
+                                // Add to available qaris
+                                availableQaris.set(qariId, {
+                                    name: qariName,
+                                    files: filesObj
+                                });
+                                console.log(`Added ${qariName} from ${subdir} directory`);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Error scanning ${subdir} directory:`, error);
+                }
+            }
+            
+            console.log(`Finished scanning. Found ${availableQaris.size} total Adhan options.`);
+        } catch (error) {
+            console.error("Error scanning Adhan directory:", error);
+        }
     }
 
     async verifyAudioStructure() {
@@ -641,133 +730,152 @@ class AzanPlayer {
 
     async initializeQariSelectors() {
         console.log("Initializing Qari selectors...");
+        await this.verifyAudioStructure();
         
-        // Verify audio structure
-        if (!this.audioFiles) {
-            console.error("Audio files not initialized");
-            return;
-        }
-        
-        // Define available Muazzins with user-friendly names
-        const availableMuazzins = [
-            { id: 'islamcan-19', name: 'IslamCan 19' },
-            { id: 'islamcan-20', name: 'IslamCan 20' },
-            { id: 'islamcan-21', name: 'IslamCan 21' },
-            { id: 'assabile-madina', name: 'Assabile - Madina' },
-            { id: 'assabile-makkah', name: 'Assabile - Makkah' },
-            { id: 'assabile-mishary', name: 'Assabile - Mishary Rashid' },
-            { id: 'assabile-abdul-basit', name: 'Assabile - Abdul Basit' },
-            { id: 'assabile-fajr-special', name: 'Assabile - Fajr Special' }
-        ];
-        
-        // Iterate over prayers
+        // Scan for available Adhans in the audio/adhans directory
+        const availableQaris = await this.scanAvailableAdhans();
+        console.log(`Found ${availableQaris.size} available Qaris after scanning`);
+
         for (const prayer of this.availablePrayers) {
-            // Get selectors
-            const qariSelector = document.getElementById(`${prayer}QariSelect`);
-            const notifTypeSelector = document.getElementById(`${prayer}NotifType`);
+            const qariSelect = document.getElementById(`${prayer}QariSelect`);
+            const notifSelect = document.getElementById(`${prayer}NotifType`);
             
-            if (!qariSelector) {
-                console.warn(`Qari selector for ${prayer} not found`);
+            if (!qariSelect || !notifSelect) {
+                console.warn(`Selectors for ${prayer} not found`);
                 continue;
             }
-            
+
             // Clear existing options
-            qariSelector.innerHTML = '';
-            
-            // Add available Muazzins
-            for (const muazzin of availableMuazzins) {
+            qariSelect.innerHTML = '';
+            console.log(`Populating options for ${prayer} prayer...`);
+
+            // Add available Muazzins from both predefined and scanned sources
+            // First add from predefined localAdhans
+            for (const [key, muazzin] of Object.entries(localAdhans)) {
                 try {
-                    // Check if this Muazzin has audio for this prayer
-                    const audioPath = this.audioFiles[muazzin.id]?.[prayer];
-                    if (!audioPath) {
-                        console.warn(`No audio path found for ${muazzin.id} - ${prayer}`);
-                        continue;
-                    }
-                    
-                    // Verify audio file exists
+                    const audioPath = muazzin.files[prayer];
+                    console.log(`Checking ${muazzin.name} (${key}) for ${prayer}: ${audioPath}`);
                     const exists = await this.verifyAudioFile(audioPath);
-                    if (!exists) {
-                        console.warn(`Audio file not found for ${muazzin.id} - ${prayer}: ${audioPath}`);
+                    console.log(`${muazzin.name} (${key}) for ${prayer}: ${exists ? 'Available' : 'Not found'}`);
+                    
+                    if (exists) {
+                        const option = document.createElement('option');
+                        option.value = key;
+                        option.textContent = muazzin.name;
+                        qariSelect.appendChild(option);
+                        console.log(`Added ${muazzin.name} to ${prayer} options`);
+                    }
+                } catch (error) {
+                    console.error(`Error checking ${muazzin.name} for ${prayer}:`, error);
+                }
+            }
+            
+            // Then add from dynamically scanned Adhans
+            for (const [key, muazzin] of availableQaris.entries()) {
+                try {
+                    // Skip if this qari is already in the predefined list
+                    if (localAdhans[key]) {
                         continue;
                     }
                     
-                    // Add option to selector
-                    const option = document.createElement('option');
-                    option.value = muazzin.id;
-                    option.textContent = muazzin.name;
-                    qariSelector.appendChild(option);
+                    const audioPath = muazzin.files[prayer];
+                    if (audioPath) {
+                        const option = document.createElement('option');
+                        option.value = key;
+                        option.textContent = muazzin.name;
+                        qariSelect.appendChild(option);
+                        console.log(`Added scanned ${muazzin.name} to ${prayer} options`);
+                    }
                 } catch (error) {
-                    console.error(`Error checking Muazzin ${muazzin.id} for ${prayer}:`, error);
+                    console.error(`Error adding scanned ${muazzin.name} for ${prayer}:`, error);
                 }
             }
-            
-            // Add beep option
-            const beepOption = document.createElement('option');
-            beepOption.value = 'beep';
-            beepOption.textContent = 'Beep Sound';
-            qariSelector.appendChild(beepOption);
-            
-            // Set saved selection or default
-            const savedQari = localStorage.getItem(`${prayer}Qari`);
-            if (savedQari && qariSelector.querySelector(`option[value="${savedQari}"]`)) {
-                qariSelector.value = savedQari;
-            } else if (qariSelector.options.length > 0) {
-                // Set first available option as default
-                qariSelector.value = qariSelector.options[0].value;
-                localStorage.setItem(`${prayer}Qari`, qariSelector.value);
+
+            // Set saved selections or defaults
+            const savedQari = localStorage.getItem(`${prayer}Qari`) || 'default';
+            const savedNotifType = localStorage.getItem(`${prayer}NotifType`) || 'adhan';
+
+            if (qariSelect.querySelector(`option[value="${savedQari}"]`)) {
+                qariSelect.value = savedQari;
+                console.log(`Set ${prayer} to saved selection: ${savedQari}`);
+            } else if (qariSelect.options.length > 0) {
+                qariSelect.value = qariSelect.options[0].value;
+                localStorage.setItem(`${prayer}Qari`, qariSelect.value);
+                console.log(`Set ${prayer} to first available option: ${qariSelect.value}`);
             }
+
+            notifSelect.value = savedNotifType;
+            console.log(`Set ${prayer} notification type to: ${savedNotifType}`);
             
-            // Set notification type if selector exists
-            if (notifTypeSelector) {
-                const savedNotifType = localStorage.getItem(`${prayer}NotifType`) || 'adhan';
-                if (notifTypeSelector.querySelector(`option[value="${savedNotifType}"]`)) {
-                    notifTypeSelector.value = savedNotifType;
-                }
-                
-                // Add change event listener
-                notifTypeSelector.addEventListener('change', (e) => {
-                    localStorage.setItem(`${prayer}NotifType`, e.target.value);
-                });
-            }
-            
-            // Add change event listener for Qari selector
-            qariSelector.addEventListener('change', (e) => {
-                localStorage.setItem(`${prayer}Qari`, e.target.value);
-            });
+            // Log final number of options
+            console.log(`${prayer} has ${qariSelect.options.length} available Muazzins`);
         }
-        
-        console.log("Qari selectors initialized");
     }
 
     async playAdhan(prayer) {
         try {
             this.currentPrayer = prayer;
-            const notifType = localStorage.getItem(`${prayer}NotifType`) || 'adhan';
+            
+            // Get selected notification type
+            const notifTypeSelect = document.getElementById(`${prayer}NotifType`);
+            const notifType = notifTypeSelect ? notifTypeSelect.value : 'adhan';
             
             if (notifType === 'beep') {
-                return this.playBeep(prayer);
+                return await this.playBeep(prayer);
             }
-
-            const selectedQari = localStorage.getItem(`${prayer}Qari`);
-            if (!selectedQari || !localAdhans[selectedQari]) {
-                console.warn(`No Muazzin selected for ${prayer}, using default`);
-                localStorage.setItem(`${prayer}Qari`, 'default');
+            
+            const qariId = this.getQariForPrayer(prayer);
+            if (!qariId) {
+                throw new Error(`No Qari selected for ${prayer}`);
             }
-
-            const qari = localAdhans[selectedQari] || localAdhans['default'];
-            const audioPath = qari.files[prayer];
-
-            if (!await this.verifyAudioFile(audioPath)) {
-                throw new Error(`Audio file not found: ${audioPath}`);
+            
+            // Check local resources first
+            const localResource = await this.checkLocalAzanResources(qariId, prayer);
+            
+            if (localResource.exists) {
+                // Use local resource
+                console.log(`Using local resource for ${qariId} - ${prayer}`);
+                
+                // Use the class audio element
+                if (localResource.isDataUrl) {
+                    // Use data URL directly
+                    this.audio.src = localResource.path;
+                } else {
+                    // Use file path
+                    this.audio.src = localResource.path;
+                }
+                
+                // Play the audio
+                await this.audio.play();
+                console.log(`Playing ${prayer} Adhan from ${qariId}`);
+                
+                return true;
+            } else {
+                // Show download option
+                console.log(`No local resource found for ${qariId} - ${prayer}, showing download option`);
+                
+                // Find the prayer container
+                const prayerSelector = document.getElementById(`${prayer}QariSelect`);
+                if (prayerSelector) {
+                    this.showDownloadOption(qariId, prayer, prayerSelector.parentElement);
+                }
+                
+                // Try to use default Adhan as fallback
+                console.log("Trying default Adhan as fallback");
+                const defaultPath = localAdhans['default'].files[prayer];
+                const exists = await this.verifyAudioFile(defaultPath);
+                
+                if (exists) {
+                    this.audio.src = defaultPath;
+                    await this.audio.play();
+                    console.log(`Playing default ${prayer} Adhan as fallback`);
+                    return true;
+                } else {
+                    throw new Error(`No Adhan audio available for ${prayer}`);
+                }
             }
-
-            console.log(`Playing ${prayer} Adhan from ${qari.name}`);
-            this.audio.src = audioPath;
-            await this.audio.play();
-
         } catch (error) {
-            console.error(`Error playing ${prayer} Adhan:`, error);
-            this.initializeQariSelectors(); // Rescan available options
+            console.error(`Error playing Adhan for ${prayer}:`, error);
             throw error;
         }
     }
@@ -810,6 +918,229 @@ class AzanPlayer {
                 console.log("Notification permission granted");
             }
         });
+    }
+
+    // Check for local Azan resources first
+    async checkLocalAzanResources(qariId, prayer) {
+        console.log(`Checking local resources for ${qariId} - ${prayer}`);
+        
+        try {
+            // Get the file path for this qari and prayer
+            const filePath = this.getAudioPath(qariId, prayer);
+            if (!filePath) {
+                console.warn(`No file path found for ${qariId} - ${prayer}`);
+                return { exists: false, path: null };
+            }
+            
+            // Check if we've already verified this file
+            if (verifiedAudioFiles.has(filePath)) {
+                return { exists: true, path: filePath };
+            }
+            
+            // Try to verify the local file
+            const exists = await this.verifyAudioFile(filePath);
+            if (exists) {
+                console.log(`Local resource found: ${filePath}`);
+                return { exists: true, path: filePath };
+            }
+            
+            // Check if we have a downloaded version
+            const localStoragePath = `downloaded_${qariId}_${prayer}`;
+            const downloadedData = localStorage.getItem(localStoragePath);
+            if (downloadedData) {
+                console.log(`Using downloaded resource for ${qariId} - ${prayer}`);
+                return { exists: true, path: downloadedData, isDataUrl: true };
+            }
+            
+            console.log(`No local resource found for ${qariId} - ${prayer}`);
+            return { exists: false, path: filePath };
+        } catch (error) {
+            console.error(`Error checking local resources for ${qariId} - ${prayer}:`, error);
+            return { exists: false, path: null, error };
+        }
+    }
+
+    // Function to download Azan audio
+    async downloadAzanAudio(qariId, prayer) {
+        const downloadKey = `${qariId}_${prayer}`;
+        
+        // Check if download is already in progress
+        if (pendingDownloads.has(downloadKey)) {
+            console.log(`Download already in progress for ${qariId} - ${prayer}`);
+            return pendingDownloads.get(downloadKey);
+        }
+        
+        // Create a new download promise
+        const downloadPromise = new Promise(async (resolve, reject) => {
+            try {
+                console.log(`Downloading Azan audio for ${qariId} - ${prayer}`);
+                
+                // Get the file path
+                const filePath = this.getAudioPath(qariId, prayer);
+                if (!filePath) {
+                    throw new Error(`No file path found for ${qariId} - ${prayer}`);
+                }
+                
+                // Fetch the audio file
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error(`Failed to download audio: ${response.status} ${response.statusText}`);
+                }
+                
+                // Convert to blob and then to data URL
+                const blob = await response.blob();
+                const reader = new FileReader();
+                
+                reader.onload = function() {
+                    const dataUrl = reader.result;
+                    
+                    // Store in localStorage if not too large (max ~2MB)
+                    if (dataUrl.length < 2000000) {
+                        try {
+                            const localStoragePath = `downloaded_${qariId}_${prayer}`;
+                            localStorage.setItem(localStoragePath, dataUrl);
+                            downloadedAudioFiles.set(downloadKey, dataUrl);
+                            console.log(`Saved downloaded audio for ${qariId} - ${prayer}`);
+                        } catch (storageError) {
+                            console.warn(`Could not save to localStorage: ${storageError.message}`);
+                        }
+                    }
+                    
+                    // Remove from pending downloads
+                    pendingDownloads.delete(downloadKey);
+                    
+                    // Resolve with the data URL
+                    resolve({ success: true, dataUrl });
+                };
+                
+                reader.onerror = function() {
+                    pendingDownloads.delete(downloadKey);
+                    reject(new Error('Failed to convert audio to data URL'));
+                };
+                
+                reader.readAsDataURL(blob);
+                
+            } catch (error) {
+                pendingDownloads.delete(downloadKey);
+                console.error(`Error downloading audio for ${qariId} - ${prayer}:`, error);
+                reject(error);
+            }
+        });
+        
+        // Store the promise
+        pendingDownloads.set(downloadKey, downloadPromise);
+        
+        return downloadPromise;
+    }
+
+    // Show download option UI
+    showDownloadOption(qariId, prayer, targetElement) {
+        // Create download button if it doesn't exist
+        const buttonId = `download-${qariId}-${prayer}`;
+        let downloadButton = document.getElementById(buttonId);
+        
+        if (!downloadButton) {
+            downloadButton = document.createElement('button');
+            downloadButton.id = buttonId;
+            downloadButton.className = 'download-azan-btn';
+            downloadButton.innerHTML = '<span class="material-icons">cloud_download</span> Download';
+            downloadButton.style.cssText = `
+                background: #2196F3;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 4px;
+                margin: 5px 0;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                font-size: 0.9em;
+            `;
+            
+            // Add click handler
+            const self = this;
+            downloadButton.addEventListener('click', async function() {
+                try {
+                    // Update button state
+                    downloadButton.disabled = true;
+                    downloadButton.innerHTML = '<span class="material-icons">downloading</span> Downloading...';
+                    
+                    // Download the audio
+                    const result = await self.downloadAzanAudio(qariId, prayer);
+                    
+                    if (result.success) {
+                        // Update button
+                        downloadButton.innerHTML = '<span class="material-icons">check_circle</span> Downloaded';
+                        downloadButton.style.background = '#4CAF50';
+                        
+                        // Remove button after a delay
+                        setTimeout(() => {
+                            downloadButton.remove();
+                        }, 3000);
+                    }
+                } catch (error) {
+                    console.error('Download failed:', error);
+                    downloadButton.innerHTML = '<span class="material-icons">error</span> Failed';
+                    downloadButton.style.background = '#F44336';
+                    
+                    // Reset after delay
+                    setTimeout(() => {
+                        downloadButton.disabled = false;
+                        downloadButton.innerHTML = '<span class="material-icons">cloud_download</span> Retry';
+                    }, 3000);
+                }
+            });
+            
+            // Add to target element
+            if (targetElement) {
+                targetElement.appendChild(downloadButton);
+            } else {
+                // Find the prayer container using standard selectors
+                const prayerContainers = document.querySelectorAll('.prayer-muazzin h3');
+                let prayerContainer = null;
+                
+                // Find the container with the matching prayer name
+                for (const container of prayerContainers) {
+                    if (container.textContent.toLowerCase().includes(prayer.toLowerCase())) {
+                        prayerContainer = container;
+                        break;
+                    }
+                }
+                
+                if (prayerContainer) {
+                    prayerContainer.parentElement.appendChild(downloadButton);
+                } else {
+                    // Fallback - add to body
+                    document.body.appendChild(downloadButton);
+                }
+            }
+        }
+        
+        return downloadButton;
+    }
+    
+    // Helper method to get audio path for a qari and prayer
+    getAudioPath(qariId, prayer) {
+        // Check if qari exists
+        if (!localAdhans[qariId]) {
+            console.warn(`Qari ${qariId} not found`);
+            return null;
+        }
+        
+        // Get the audio path
+        return localAdhans[qariId].files[prayer] || null;
+    }
+    
+    // Helper method to get selected qari for a prayer
+    getQariForPrayer(prayer) {
+        const selectedQari = localStorage.getItem(`${prayer}Qari`);
+        if (!selectedQari || !localAdhans[selectedQari]) {
+            console.warn(`No valid Muazzin selected for ${prayer}, using default`);
+            return 'default';
+        }
+        return selectedQari;
     }
 }
 
