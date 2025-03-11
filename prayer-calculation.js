@@ -460,7 +460,48 @@ window.onload = async function () {
 async function calculatePrayerTimes(retryCount = 3) {
     try {
         if (!latitude || !longitude) {
-            throw new Error('Location coordinates not available');
+            console.error('Location coordinates not available, requesting location...');
+            
+            // Try to get location again
+            if (typeof getLocation === 'function') {
+                await new Promise(resolve => {
+                    // Override the showPosition function temporarily to resolve the promise
+                    const originalShowPosition = window.showPosition;
+                    window.showPosition = function(position) {
+                        // Call the original function
+                        if (originalShowPosition) originalShowPosition(position);
+                        // Resolve the promise
+                        resolve();
+                    };
+                    
+                    // Call getLocation
+                    getLocation();
+                    
+                    // Set a timeout in case getLocation fails
+                    setTimeout(() => {
+                        // Restore original function
+                        window.showPosition = originalShowPosition;
+                        
+                        // If still no coordinates, use default
+                        if (!latitude || !longitude) {
+                            console.warn('Using default coordinates (Makkah)');
+                            latitude = 21.4225;  // Makkah coordinates as default
+                            longitude = 39.8262;
+                        }
+                        resolve();
+                    }, 5000);
+                });
+            } else {
+                // If getLocation is not available, use default coordinates
+                console.warn('getLocation function not available, using default coordinates (Makkah)');
+                latitude = 21.4225;  // Makkah coordinates as default
+                longitude = 39.8262;
+            }
+            
+            // Check again after attempting to get location
+            if (!latitude || !longitude) {
+                throw new Error('Location coordinates still not available after retry');
+            }
         }
 
         // Create coordinates object
@@ -475,7 +516,7 @@ async function calculatePrayerTimes(retryCount = 3) {
         
         // Get calculation parameters based on method
         const params = getCalculationParameters();
-        
+
         // Handle high latitude adjustments
         if (Math.abs(latitude) >= 45) {
             params.highLatitudeRule = getHighLatitudeRule();
@@ -665,132 +706,100 @@ let customDstAdjustment = 0;  // Default to no adjustment
 function initializeDSTSettings() {
     console.log("Initializing DST settings...");
     
-    try {
-        // Load saved DST handling preference
-        dstHandlingMode = localStorage.getItem('dstHandlingMode') || 'auto';
-        customDstAdjustment = parseInt(localStorage.getItem('customDstAdjustment') || '0');
+    // Load saved DST handling preference
+    dstHandlingMode = localStorage.getItem('dstHandlingMode') || 'auto';
+    customDstAdjustment = parseInt(localStorage.getItem('customDstAdjustment') || '0');
+    
+    // Set up radio buttons
+    const dstRadios = document.querySelectorAll('input[name="dstHandling"]');
+    dstRadios.forEach(radio => {
+        if (radio.value === dstHandlingMode) {
+            radio.checked = true;
+        }
         
-        // Set up radio buttons
-        const dstRadios = document.querySelectorAll('input[name="dstHandling"]');
-        dstRadios.forEach(radio => {
-            if (radio.value === dstHandlingMode) {
-                radio.checked = true;
-            }
-            
-            radio.addEventListener('change', function() {
-                if (this.checked) {
-                    dstHandlingMode = this.value;
-                    localStorage.setItem('dstHandlingMode', dstHandlingMode);
-                    
-                    // Enable/disable custom adjustment dropdown
-                    const customAdjustment = document.getElementById('customDstAdjustment');
-                    if (customAdjustment) {
-                        customAdjustment.disabled = (dstHandlingMode !== 'custom');
-                    }
-                    
-                    // Recalculate prayer times with new DST settings
-                    calculatePrayerTimes().then(() => {
-                        console.log("Prayer times recalculated with new DST settings");
-                    }).catch(error => {
-                        console.error("Error recalculating prayer times:", error);
-                    });
-                    
-                    // Update DST status display
-                    updateDSTStatus();
-                }
-            });
-        });
-        
-        // Set up custom adjustment dropdown
-        const customAdjustment = document.getElementById('customDstAdjustment');
-        if (customAdjustment) {
-            customAdjustment.value = customDstAdjustment.toString();
-            customAdjustment.disabled = (dstHandlingMode !== 'custom');
-            
-            customAdjustment.addEventListener('change', function() {
-                customDstAdjustment = parseInt(this.value);
-                localStorage.setItem('customDstAdjustment', customDstAdjustment.toString());
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                dstHandlingMode = this.value;
+                localStorage.setItem('dstHandlingMode', dstHandlingMode);
                 
-                // Recalculate prayer times with new adjustment
+                // Enable/disable custom adjustment dropdown
+                const customAdjustment = document.getElementById('customDstAdjustment');
+                if (customAdjustment) {
+                    customAdjustment.disabled = (dstHandlingMode !== 'custom');
+                }
+                
+                // Recalculate prayer times with new DST settings
                 calculatePrayerTimes().then(() => {
-                    console.log("Prayer times recalculated with new DST adjustment");
+                    console.log("Prayer times recalculated with new DST settings");
                 }).catch(error => {
                     console.error("Error recalculating prayer times:", error);
                 });
+                
+                // Update DST status display
+                updateDSTStatus();
+            }
+        });
+    });
+    
+    // Set up custom adjustment dropdown
+    const customAdjustment = document.getElementById('customDstAdjustment');
+    if (customAdjustment) {
+        customAdjustment.value = customDstAdjustment.toString();
+        customAdjustment.disabled = (dstHandlingMode !== 'custom');
+        
+        customAdjustment.addEventListener('change', function() {
+            customDstAdjustment = parseInt(this.value);
+            localStorage.setItem('customDstAdjustment', customDstAdjustment.toString());
+            
+            // Recalculate prayer times with new adjustment
+            calculatePrayerTimes().then(() => {
+                console.log("Prayer times recalculated with new DST adjustment");
+            }).catch(error => {
+                console.error("Error recalculating prayer times:", error);
             });
-        }
-        
-        // Update DST status display immediately
-        updateDSTStatus();
-        
-        // Schedule regular updates of DST status
-        setInterval(updateDSTStatus, 60000); // Update every minute
-        
-        console.log("DST settings initialized successfully");
-    } catch (error) {
-        console.error("Error initializing DST settings:", error);
+        });
     }
+    
+    // Update DST status display
+    updateDSTStatus();
 }
 
 // Update DST status display
 function updateDSTStatus() {
-    try {
-        const dstStatusElement = document.getElementById('dstStatus');
-        const timeZoneInfoElement = document.getElementById('timeZoneInfo');
+    const dstStatusElement = document.getElementById('dstStatus');
+    const timeZoneInfoElement = document.getElementById('timeZoneInfo');
+    
+    if (dstStatusElement && timeZoneInfoElement) {
+        const date = new Date();
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const isDST = getDSTAdjustment(date) > 0;
         
-        if (dstStatusElement && timeZoneInfoElement) {
-            const date = new Date();
-            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
-            const isDST = detectDST(date);
-            
-            // Update time zone info
-            timeZoneInfoElement.textContent = `${timeZone} (UTC${getFormattedTimezoneOffset()})`;
-            
-            // Update DST status based on mode
-            switch (dstHandlingMode) {
-                case 'auto':
-                    dstStatusElement.textContent = isDST ? 
-                        "Active (automatically detected)" : 
-                        "Inactive (automatically detected)";
-                    dstStatusElement.style.color = isDST ? "#4CAF50" : "#F44336";
-                    break;
-                case 'always':
-                    dstStatusElement.textContent = "Always active (manual override)";
-                    dstStatusElement.style.color = "#4CAF50";
-                    break;
-                case 'never':
-                    dstStatusElement.textContent = "Always inactive (manual override)";
-                    dstStatusElement.style.color = "#F44336";
-                    break;
-                case 'custom':
-                    const adjustment = customDstAdjustment;
-                    const sign = adjustment > 0 ? "+" : adjustment < 0 ? "-" : "";
-                    dstStatusElement.textContent = `Custom adjustment: ${sign}${Math.abs(adjustment)} hour(s)`;
-                    dstStatusElement.style.color = adjustment !== 0 ? "#2196F3" : "#F44336";
-                    break;
-                default:
-                    dstStatusElement.textContent = "Unknown DST mode";
-                    dstStatusElement.style.color = "#F44336";
-            }
+        // Update time zone info
+        timeZoneInfoElement.textContent = `${timeZone} (UTC${getFormattedTimezoneOffset()})`;
+        
+        // Update DST status based on mode
+        switch (dstHandlingMode) {
+            case 'auto':
+                dstStatusElement.textContent = isDST ? 
+                    "Active (automatically detected)" : 
+                    "Inactive (automatically detected)";
+                dstStatusElement.style.color = isDST ? "#4CAF50" : "#F44336";
+                break;
+            case 'always':
+                dstStatusElement.textContent = "Always active (manual override)";
+                dstStatusElement.style.color = "#4CAF50";
+                break;
+            case 'never':
+                dstStatusElement.textContent = "Always inactive (manual override)";
+                dstStatusElement.style.color = "#F44336";
+                break;
+            case 'custom':
+                const adjustment = customDstAdjustment;
+                const sign = adjustment > 0 ? "+" : adjustment < 0 ? "-" : "";
+                dstStatusElement.textContent = `Custom adjustment: ${sign}${Math.abs(adjustment)} hour(s)`;
+                dstStatusElement.style.color = adjustment !== 0 ? "#2196F3" : "#F44336";
+                break;
         }
-    } catch (error) {
-        console.error("Error updating DST status:", error);
-    }
-}
-
-// Detect if DST is currently in effect
-function detectDST(date) {
-    try {
-        const jan = new Date(date.getFullYear(), 0, 1);
-        const jul = new Date(date.getFullYear(), 6, 1);
-        
-        const stdTimezoneOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-        const currentOffset = date.getTimezoneOffset();
-        
-        return currentOffset < stdTimezoneOffset;
-    } catch (error) {
-        console.error("Error detecting DST:", error);
-        return false;
     }
 }
 
@@ -1370,23 +1379,11 @@ async function handleMadhabChange(madhab) {
             madhabInput.checked = true;
         }
 
-        // Ensure we have coordinates before calculating
-        if (!latitude || !longitude) {
-            await getLocation();
-        }
-
         // Clear current times
         currentPrayerTimes = null;
 
-        // Try local calculation first
-        let times = null;
-        try {
-            times = await calculatePrayerTimes();
-        } catch (calcError) {
-            console.warn('Local calculation failed:', calcError);
-            // Try API fallback
-            times = await fallbackToAPI();
-        }
+        // Force recalculation
+        const times = await calculatePrayerTimes();
         
         if (!times) {
             throw new Error('Failed to calculate new prayer times');
@@ -1397,8 +1394,6 @@ async function handleMadhabChange(madhab) {
 
     } catch (error) {
         console.error('Error updating madhab:', error);
-        // Show error to user but don't throw
-        showError(`Error updating madhab: ${error.message}. Falling back to API...`);
         // Try API fallback
         return await fallbackToAPI();
     }

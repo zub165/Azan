@@ -1178,11 +1178,26 @@ document.addEventListener("click", () => {
     }
 }, { once: true });
 
+// Create a global instance of AzanPlayer
+window.AzanPlayer = new AzanPlayer();
+
 // Initialize when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    window.AzanPlayer = new AzanPlayer();
+    console.log("Initializing AzanPlayer...");
+    // Don't create a new instance here, just use the global one
     window.AzanPlayer.initializeQariSelectors();
 });
 
-window.AzanPlayer = AzanPlayer;
-window.AzanPlayer.localAdhans = localAdhans;
+// Expose initializeQariSelectors as a global function for adhan-init.js to call
+window.initializeQariSelectors = async function() {
+    console.log("Global initializeQariSelectors called");
+    if (window.AzanPlayer) {
+        return await window.AzanPlayer.initializeQariSelectors();
+    } else {
+        console.error("AzanPlayer not initialized yet");
+        throw new Error("AzanPlayer not initialized");
+    }
+};
+
+// Expose localAdhans for reference
+window.localAdhans = localAdhans;
