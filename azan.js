@@ -387,6 +387,7 @@ class AzanPlayer {
         this.audio = new Audio();
         this.currentPrayer = null;
         this.availablePrayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+        this.scannedAdhans = new Map(); // Initialize the scanned adhans cache
         
         // Initialize audio context
         this.initializeAudioContext();
@@ -547,6 +548,9 @@ class AzanPlayer {
         
         // Now scan the audio/adhans directory for additional Adhans
         await this.scanAdhanDirectory(availableQaris);
+        
+        // Store the scanned adhans in the class-level cache
+        this.scannedAdhans = availableQaris;
         
         return availableQaris;
     }
@@ -735,6 +739,9 @@ class AzanPlayer {
         // Scan for available Adhans in the audio/adhans directory
         const availableQaris = await this.scanAvailableAdhans();
         console.log(`Found ${availableQaris.size} available Qaris after scanning`);
+        
+        // Store the scanned adhans in the class-level cache
+        this.scannedAdhans = availableQaris;
 
         for (const prayer of this.availablePrayers) {
             const qariSelect = document.getElementById(`${prayer}QariSelect`);
@@ -1123,24 +1130,44 @@ class AzanPlayer {
     
     // Helper method to get audio path for a qari and prayer
     getAudioPath(qariId, prayer) {
-        // Check if qari exists
-        if (!localAdhans[qariId]) {
-            console.warn(`Qari ${qariId} not found`);
+        // First check in predefined localAdhans
+        if (localAdhans[qariId] && localAdhans[qariId].files && localAdhans[qariId].files[prayer]) {
+            return localAdhans[qariId].files[prayer];
+        }
+        
+        // If not found in predefined, check in dynamically scanned adhans
+        // We need to maintain a class-level cache of scanned adhans
+        if (!this.scannedAdhans) {
+            console.warn(`No scanned adhans cache available for ${qariId}`);
             return null;
         }
         
-        // Get the audio path
-        return localAdhans[qariId].files[prayer] || null;
+        // Check in scanned adhans
+        const scannedQari = this.scannedAdhans.get(qariId);
+        if (scannedQari && scannedQari.files && scannedQari.files[prayer]) {
+            return scannedQari.files[prayer];
+        }
+        
+        console.warn(`Qari ${qariId} not found for prayer ${prayer}`);
+        return null;
     }
     
     // Helper method to get selected qari for a prayer
     getQariForPrayer(prayer) {
         const selectedQari = localStorage.getItem(`${prayer}Qari`);
-        if (!selectedQari || !localAdhans[selectedQari]) {
-            console.warn(`No valid Muazzin selected for ${prayer}, using default`);
-            return 'default';
+        
+        // Check if the selected qari exists in predefined localAdhans
+        if (selectedQari && localAdhans[selectedQari]) {
+            return selectedQari;
         }
-        return selectedQari;
+        
+        // If not in predefined, check in dynamically scanned adhans
+        if (this.scannedAdhans && selectedQari && this.scannedAdhans.has(selectedQari)) {
+            return selectedQari;
+        }
+        
+        console.warn(`No valid Muazzin selected for ${prayer}, using default`);
+        return 'default';
     }
 }
 
